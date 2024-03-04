@@ -1,0 +1,34 @@
+[db]
+log = './db.log'    # 日志文件路径
+loglevel = '4'  # 日志等级 
+type = 'mysql' # 默认orm类型
+
+[mongodb]
+# mongodb连接的数据库
+database = 'testorm'    
+# 连接池大小
+option_pool_size = '200'   
+# mongodb代理连接方法
+proxy = 'socks5://127.0.0.1:7890'  
+# mongodb连接uri mongodb://[认证用户名]:[认证密码]@[连接地址]/[额外参数]
+uri = 'mongodb://mgouser:mgopass@127.0.0.1:27027/?authSource=admin' 
+
+[mysql]
+# mysql连接数据库
+database = 'testorm'
+# 数据库编码
+charset = 'utf8mb4'
+# 连接最大生命时间
+conn_max_lifetime = '1h'
+# mysql连接主机
+host = '127.0.0.1'
+# mysql连接端口
+port = '3306'
+# 最大空闲连接数
+max_idle_conns = '10'
+# 最大连接数
+max_open_conns = '100'
+# mysql认证用户
+user = 'orm'
+# mysql认证密码
+password = 'password'
