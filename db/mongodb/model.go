@@ -3,7 +3,7 @@ package mongodb
 import (
 	"sync"
 
-	orm "github.com/lfhy/morm"
+	orm "github.com/lfhy/morm/interface"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"

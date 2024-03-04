@@ -1,4 +1,4 @@
-package db
+package morm
 
 import (
 	"fmt"
@@ -11,7 +11,7 @@ import (
 
 	"github.com/lfhy/morm/log"
 
-	orm "github.com/lfhy/morm"
+	orm "github.com/lfhy/morm/interface"
 )
 
 var (
@@ -40,7 +40,7 @@ func initConfig() (err error) {
 	return err
 }
 
-func Init() (*orm.ORM, error) {
+func Init() (orm.ORM, error) {
 	// 读取配置文件
 	err := initConfig()
 	if err != nil {
@@ -48,22 +48,14 @@ func Init() (*orm.ORM, error) {
 	}
 	// 初始化日志
 	log.InitDBLoger()
-	var dbconn *orm.ORM
 	switch conf.ReadConfigToString("db", "type") {
 	case "mysql":
-		conn, err := InitMySQL()
-		if err != nil {
-			return nil, err
-		}
-		dbconn = &conn
+		return InitMySQL()
+
 	case "mongodb":
-		conn, err := InitMongoDB()
-		if err != nil {
-			return nil, err
-		}
-		dbconn = &conn
+		return InitMongoDB()
 	}
-	return dbconn, nil
+	return nil, fmt.Errorf("不支持的数据库类型:%v", conf.ReadConfigToString("db", "type"))
 }
 
 func InitMongoDB() (orm.ORM, error) {

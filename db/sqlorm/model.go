@@ -3,7 +3,7 @@ package sqlorm
 import (
 	"sync"
 
-	orm "github.com/lfhy/morm"
+	orm "github.com/lfhy/morm/interface"
 )
 
 type Model struct {

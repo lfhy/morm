@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"strings"
 
-	orm "github.com/lfhy/morm"
+	orm "github.com/lfhy/morm/interface"
 
 	"gorm.io/gorm"
 )

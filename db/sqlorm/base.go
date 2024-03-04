@@ -1,6 +1,6 @@
 package sqlorm
 
-import orm "github.com/lfhy/morm"
+import orm "github.com/lfhy/morm/interface"
 
 // 插入数据
 func (m Model) Create(data interface{}) (id string, err error) {

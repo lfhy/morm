@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"reflect"
 
-	orm "github.com/lfhy/morm"
+	orm "github.com/lfhy/morm/interface"
 
 	"github.com/lfhy/morm/conf"
 	"github.com/lfhy/morm/log"

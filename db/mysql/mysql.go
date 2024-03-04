@@ -9,7 +9,7 @@ import (
 	"github.com/lfhy/morm/conf"
 	"github.com/lfhy/morm/db/sqlorm"
 
-	orm "github.com/lfhy/morm"
+	orm "github.com/lfhy/morm/interface"
 
 	gmysql "gorm.io/driver/mysql"
 	"gorm.io/gorm"
