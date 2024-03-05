@@ -101,10 +101,10 @@ func (m Model) Save(data interface{}) (id string, err error) {
 	opts := options.Update().SetUpsert(true)
 	result, err := m.Tx.Client.Database(m.Tx.Database).Collection(m.GetCollection(m.Data)).UpdateOne(context.Background(), m.WhereList, data, opts)
 	if err == nil {
-		id = result.UpsertedID.(string)
+		id = fmt.Sprint(result.UpsertedID)
 	}
 	if id == "" {
-		id = m.WhereList["_id"].(string)
+		id = fmt.Sprint(result.UpsertedID)
 	}
 	return
 }
