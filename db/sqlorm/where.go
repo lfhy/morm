@@ -121,33 +121,35 @@ func (m Model) whereMode(condition interface{}, mode int) orm.ORMModel {
 func (m Model) makeQuary() *gorm.DB {
 	quary := m.tx.getDB().Model(m.Data)
 	if m.OpList != nil {
+		
 		m.OpList.Range(func(key, value interface{}) bool {
-			if strings.HasPrefix(key.(string), "where ") {
-				quary = quary.Where(strings.TrimPrefix(key.(string), "where "), value)
+			keyStr := fmt.Sprint(key)
+			if strings.HasPrefix(keyStr, "where ") {
+				quary = quary.Where(strings.TrimPrefix(keyStr, "where "), value)
 				return true
 			}
-			if strings.HasPrefix(key.(string), "or ") {
-				quary = quary.Or(strings.TrimPrefix(key.(string), "or "), value)
+			if strings.HasPrefix(keyStr, "or ") {
+				quary = quary.Or(strings.TrimPrefix(keyStr, "or "), value)
 				return true
 			}
-			if strings.HasPrefix(key.(string), "not ") {
-				quary = quary.Not(strings.TrimPrefix(key.(string), "not "), value)
+			if strings.HasPrefix(keyStr, "not ") {
+				quary = quary.Not(strings.TrimPrefix(keyStr, "not "), value)
 				return true
 			}
-			if strings.HasPrefix(key.(string), "limit ") {
+			if strings.HasPrefix(keyStr, "limit ") {
 				quary = quary.Limit(value.(int))
 				return true
 			}
-			if strings.HasPrefix(key.(string), "offset ") {
+			if strings.HasPrefix(keyStr, "offset ") {
 				quary = quary.Offset(value.(int))
 				return true
 			}
-			if strings.HasPrefix(key.(string), "asc ") {
-				quary = quary.Order(fmt.Sprintf("%s ASC", strings.TrimPrefix(key.(string), "asc ")))
+			if strings.HasPrefix(keyStr, "asc ") {
+				quary = quary.Order(fmt.Sprintf("%s ASC", strings.TrimPrefix(keyStr, "asc ")))
 				return true
 			}
-			if strings.HasPrefix(key.(string), "desc ") {
-				quary = quary.Order(fmt.Sprintf("%s DESC", strings.TrimPrefix(key.(string), "desc ")))
+			if strings.HasPrefix(keyStr, "desc ") {
+				quary = quary.Order(fmt.Sprintf("%s DESC", strings.TrimPrefix(keyStr, "desc ")))
 				return true
 			}
 			// fmt.Println(key, value)

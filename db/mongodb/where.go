@@ -152,32 +152,33 @@ func (m Model) whereMode(condition interface{}, mode int) orm.ORMModel {
 	}
 	return m
 }
-
 func (m Model) makeQuary() options.FindOptions {
-
 	opts := options.Find()
+
 	if m.OpList != nil {
+		var keyStr string
 		m.OpList.Range(func(key, value interface{}) bool {
-			if strings.HasPrefix(key.(string), "limit") {
+			keyStr = fmt.Sprint(key)
+			if strings.HasPrefix(keyStr, "limit") {
 				opts = opts.SetLimit(value.(int64))
 				return true
 			}
-			if strings.HasPrefix(key.(string), "offset") {
+			if strings.HasPrefix(keyStr, "offset") {
 				opts = opts.SetSkip(value.(int64))
 				return true
 			}
-			if strings.HasPrefix(key.(string), "asc") {
+			if strings.HasPrefix(keyStr, "asc") {
 				opts = opts.SetSort(value.(primitive.M))
 				return true
 			}
-			if strings.HasPrefix(key.(string), "desc") {
+			if strings.HasPrefix(keyStr, "desc") {
 				opts = opts.SetSort(value.(primitive.M))
 				return true
 			}
 			return true
 		})
-
 	}
+
 	return *opts
 }
 
