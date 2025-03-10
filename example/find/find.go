@@ -30,10 +30,6 @@ func main() {
 	// 使用自定义日志:db.SetLogger
 	// 数据库初始化
 	orm := morm.Init()
-	if err != nil {
-		fmt.Printf("数据库初始化失败:%v\n", err)
-		panic(err)
-	}
 
 	// 创建查询
 	var db DBSturct

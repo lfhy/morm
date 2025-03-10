@@ -7,13 +7,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/lfhy/log"
 	"github.com/lfhy/morm/conf"
 	"github.com/lfhy/morm/db/mongodb"
 	"github.com/lfhy/morm/db/mysql"
+	"github.com/lfhy/morm/log"
 	"gorm.io/gorm/logger"
-
-	orm "github.com/lfhy/morm/interface"
 )
 
 var (
@@ -37,8 +35,8 @@ func initConfig() (err error) {
 	return err
 }
 
-func Init() *orm.ORM {
-	var dbconn *orm.ORM
+func Init() *ORM {
+	var dbconn *ORM
 	db := conf.ReadConfigToString("db", "type")
 	switch db {
 	case "mysql":
@@ -57,7 +55,7 @@ func Init() *orm.ORM {
 	return dbconn
 }
 
-func InitMongoDB() *orm.ORM {
+func InitMongoDB() *ORM {
 	conn, err := mongodb.Init()
 	if err != nil {
 		panic(err)
@@ -65,7 +63,7 @@ func InitMongoDB() *orm.ORM {
 	return &conn
 }
 
-func InitMySQL() *orm.ORM {
+func InitMySQL() *ORM {
 	conn, err := mysql.Init(InitDBLoger())
 	if err != nil {
 		panic(err)
@@ -77,7 +75,7 @@ func InitDBLoger() logger.Interface {
 	LogName := conf.ReadConfigToString("db", "log")
 	f, err := os.OpenFile(LogName, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 	if err != nil && err != os.ErrExist {
-		log.Warnln("数据库", "日志初始化失败")
+		log.Errorln("数据库", "日志初始化失败")
 		f = os.Stdout
 	}
 
