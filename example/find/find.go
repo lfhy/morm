@@ -29,7 +29,7 @@ func main() {
 	}
 	// 使用自定义日志:db.SetLogger
 	// 数据库初始化
-	orm, err := morm.Init()
+	orm := morm.Init()
 	if err != nil {
 		fmt.Printf("数据库初始化失败:%v\n", err)
 		panic(err)
@@ -38,7 +38,8 @@ func main() {
 	// 创建查询
 	var db DBSturct
 	db.ID = "123"
-	err = orm.Model(&db).Find().One(&db)
+
+	err = (*orm).Model(&db).Find().One(&db)
 	if err != nil {
 		fmt.Printf("查询失败:%v\n", err)
 		return

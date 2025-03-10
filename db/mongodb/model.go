@@ -1,6 +1,7 @@
 package mongodb
 
 import (
+	"context"
 	"sync"
 
 	orm "github.com/lfhy/morm/interface"
@@ -22,6 +23,8 @@ type Model struct {
 	Data      interface{}
 	OpList    *sync.Map // key:操作模式Mode value:操作值
 	WhereList bson.M
+	Ctx       *context.Context //上下文
+
 }
 
 func (m DBConn) Model(data interface{}) orm.ORMModel {
@@ -33,4 +36,17 @@ func (m Model) Page(page, limit int) orm.ORMModel {
 		page = 1
 	}
 	return m.Offset((page - 1) * limit).Limit(limit)
+}
+func (m Model) GetContext() context.Context {
+	if m.Ctx != nil {
+		return *m.Ctx
+	} else {
+		ctx := context.Background()
+		m.Ctx = &ctx
+	}
+	return *m.Ctx
+}
+func (m Model) SetContext(ctx context.Context) orm.ORMModel {
+	m.Ctx = &ctx
+	return m
 }

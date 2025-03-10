@@ -2,14 +2,16 @@ package morm
 
 import (
 	"fmt"
+	glog "log"
+	"os"
 	"sync"
+	"time"
 
+	"github.com/lfhy/log"
 	"github.com/lfhy/morm/conf"
 	"github.com/lfhy/morm/db/mongodb"
 	"github.com/lfhy/morm/db/mysql"
 	"gorm.io/gorm/logger"
-
-	"github.com/lfhy/morm/log"
 
 	orm "github.com/lfhy/morm/interface"
 )
@@ -25,11 +27,6 @@ func InitORMConfig(configFilePath string) (err error) {
 	return initConfig()
 }
 
-// 配置日志组件
-func SetLogger(l logger.Interface) {
-	log.SetDBLoger(l)
-}
-
 func initConfig() (err error) {
 	if configFile == "" {
 		return fmt.Errorf("配置文件不存在")
@@ -40,38 +37,54 @@ func initConfig() (err error) {
 	return err
 }
 
-func Init() (orm.ORM, error) {
-	// 读取配置文件
-	err := initConfig()
-	if err != nil {
-		return nil, err
-	}
-	// 初始化日志
-	log.InitDBLoger()
-	switch conf.ReadConfigToString("db", "type") {
+func Init() *orm.ORM {
+	var dbconn *orm.ORM
+	db := conf.ReadConfigToString("db", "type")
+	switch db {
 	case "mysql":
-		return InitMySQL()
-
+		conn, err := mysql.Init(InitDBLoger())
+		if err != nil {
+			panic(err)
+		}
+		dbconn = &conn
 	case "mongodb":
-		return InitMongoDB()
+		conn, err := mongodb.Init()
+		if err != nil {
+			panic(err)
+		}
+		dbconn = &conn
 	}
-	return nil, fmt.Errorf("不支持的数据库类型:%v", conf.ReadConfigToString("db", "type"))
+	return dbconn
 }
 
-func InitMongoDB() (orm.ORM, error) {
-	// 读取配置文件
-	err := initConfig()
+func InitMongoDB() *orm.ORM {
+	conn, err := mongodb.Init()
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
-	return mongodb.Init()
+	return &conn
 }
 
-func InitMySQL() (orm.ORM, error) {
-	// 读取配置文件
-	err := initConfig()
+func InitMySQL() *orm.ORM {
+	conn, err := mysql.Init(InitDBLoger())
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
-	return mysql.Init(log.GetDBLoger())
+	return &conn
+}
+
+func InitDBLoger() logger.Interface {
+	LogName := conf.ReadConfigToString("db", "log")
+	f, err := os.OpenFile(LogName, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	if err != nil && err != os.ErrExist {
+		log.Warnln("数据库", "日志初始化失败")
+		f = os.Stdout
+	}
+
+	return logger.New(glog.New(f, "\r\n", glog.LstdFlags), logger.Config{
+		SlowThreshold:             200 * time.Millisecond,                                  // 慢 SQL 阈值
+		LogLevel:                  logger.LogLevel(conf.ReadConfigToInt("db", "loglevel")), // 日志级别
+		IgnoreRecordNotFoundError: false,                                                   // 忽略ErrRecordNotFound（记录未找到）错误
+		Colorful:                  false,                                                   // 禁用彩色打印
+	})
 }

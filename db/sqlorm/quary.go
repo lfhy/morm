@@ -20,3 +20,8 @@ func (q Quary) All(data interface{}) error {
 func (q Quary) Count() (i int64, err error) {
 	return i, q.m.makeQuary().Count(&i).Error
 }
+
+
+func (q Quary) Delete() error {
+	return q.m.makeQuary().Delete(q.m.Data).Error
+}

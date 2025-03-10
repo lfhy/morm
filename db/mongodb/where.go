@@ -106,88 +106,95 @@ func (m Model) whereMode(condition interface{}, mode int) orm.ORMModel {
 					m.WhereList[v] = bson.M{"$eq": t.Field(i).Interface()}
 				case WhereNot:
 					if v == "_id" {
-						m.WhereList[v] = t.Field(i).Interface()
+						ids, err := primitive.ObjectIDFromHex(t.Field(i).Interface().(string))
+						if err != nil {
+							log.Error(err)
+						}
+						m.WhereList[v] = bson.M{"$ne": ids}
 						continue
 					}
 					m.WhereList[v] = bson.M{"$ne": t.Field(i).Interface()}
 				case WhereGt:
-					if v == "_id" {
-						m.WhereList[v] = t.Field(i).Interface()
-						continue
-					}
 					m.WhereList[v] = bson.M{"$gt": t.Field(i).Interface()}
 				case WhereLt:
-					if v == "_id" {
-						m.WhereList[v] = t.Field(i).Interface()
-						continue
-					}
 					m.WhereList[v] = bson.M{"$lt": t.Field(i).Interface()}
 				case WhereOr:
-					if v == "_id" {
-						m.WhereList[v] = t.Field(i).Interface()
-						continue
-					}
-					//warn
 					m.WhereList[v] = bson.M{"$or": t.Field(i).Interface()}
 				case OrderAsc:
-					m.OpList.Store("asc", bson.M{v: 1})
+					data, ok := m.OpList.Load("asc")
+					if !ok {
+						m.OpList.Store("asc", bson.D{{Key: v, Value: 1}})
+					} else {
+						sort := data.(bson.D)
+						sort = append(sort, bson.E{Key: v, Value: 1})
+						m.OpList.Store("asc", sort)
+					}
 				case OrderDesc:
-					m.OpList.Store("desc", bson.M{v: -1})
+					data, ok := m.OpList.Load("desc")
+					if !ok {
+						m.OpList.Store("desc", bson.D{{Key: v, Value: -1}})
+					} else {
+						sort := data.(bson.D)
+						sort = append(sort, bson.E{Key: v, Value: -1})
+						m.OpList.Store("desc", sort)
+					}
 				}
 
 			}
 		}
 	}
 	if m.WhereList["_id"] != nil {
-		if _, ok := m.WhereList["_id"].(primitive.M); !ok {
+		if _, ok := m.WhereList["_id"].(primitive.ObjectID); !ok {
 			// 如果不是 primitive.M 类型，进行转换
 			ids, err := primitive.ObjectIDFromHex(fmt.Sprint(m.WhereList["_id"]))
 			if err != nil {
 				log.Error(err)
-			} else {
-				m.WhereList["_id"] = ids
 			}
+			m.WhereList["_id"] = ids
 		}
 
 	}
 	return m
 }
-func (m Model) makeQuary() options.FindOptions {
-	opts := options.Find()
 
+func (m Model) makeQuary() options.FindOptions {
+
+	opts := options.Find()
 	if m.OpList != nil {
-		var keyStr string
 		m.OpList.Range(func(key, value interface{}) bool {
-			keyStr = fmt.Sprint(key)
-			if strings.HasPrefix(keyStr, "limit") {
+			if strings.HasPrefix(key.(string), "limit") {
 				opts = opts.SetLimit(value.(int64))
 				return true
 			}
-			if strings.HasPrefix(keyStr, "offset") {
+			if strings.HasPrefix(key.(string), "offset") {
 				opts = opts.SetSkip(value.(int64))
 				return true
 			}
-			if strings.HasPrefix(keyStr, "asc") {
-				opts = opts.SetSort(value.(primitive.M))
+			if strings.HasPrefix(key.(string), "asc") {
+				opts = opts.SetSort(value)
 				return true
 			}
-			if strings.HasPrefix(keyStr, "desc") {
-				opts = opts.SetSort(value.(primitive.M))
+			if strings.HasPrefix(key.(string), "desc") {
+				opts = opts.SetSort(value)
 				return true
 			}
 			return true
 		})
-	}
 
+	}
 	return *opts
 }
 
 func setIDField(dataStruct interface{}, value string) {
-	val := reflect.ValueOf(dataStruct).Elem()
+	val := reflect.ValueOf(dataStruct)
+	if val.Kind() == reflect.Ptr {
+		if val.IsNil() {
+			val = reflect.New(val.Type())
+		}
+		val = val.Elem()
+	}
 	idField := val.FieldByName("ID")
-
 	if idField.IsValid() && idField.CanSet() {
-
 		idField.Set(reflect.ValueOf(value))
 	}
 }
