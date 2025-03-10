@@ -3,27 +3,65 @@ package mongodb
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"reflect"
-
-	orm "github.com/lfhy/morm/interface"
+	"time"
 
 	"github.com/lfhy/morm/conf"
+	orm "github.com/lfhy/morm/interface"
+	"golang.org/x/net/proxy"
+
 	"github.com/lfhy/morm/log"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
 func Init() (orm.ORM, error) {
 	ctx := context.Background()
 	// 设置连接uri
 	opts := options.Client().ApplyURI(conf.ReadConfigToString("mongodb", "uri"))
+	proxys := conf.ReadConfigToString("mongodb", "proxy")
+	if proxys != "" {
+		// socks5://user:pass@host:port
+		u, err := url.Parse(proxys)
+		if err == nil {
+			u.Host = fmt.Sprintf("%s:%s", u.Hostname(), u.Port())
+			var auth *proxy.Auth
+			if u.User != nil {
+				pass, ok := u.User.Password()
+				if ok {
+					auth = &proxy.Auth{
+						User:     u.User.Username(),
+						Password: pass,
+					}
+				}
+			}
+			dialer, err := proxy.SOCKS5("tcp", u.Host, auth, proxy.Direct)
+			if err == nil {
+				opts.SetDialer(dialer.(proxy.ContextDialer))
+			}
+		}
+	}
+	poolSize := conf.ReadConfigToInt("mongodb", "option_pool_size")
+	if poolSize == 0 {
+		poolSize = 150
+	}
+
+	opts.SetMaxPoolSize(uint64(poolSize))
+	opts.SetMinPoolSize(uint64(poolSize / 10))
+	// 设置30s 超时
+	opts.SetTimeout(30 * time.Second)
+	// 只读取主节点
+	opts.SetReadPreference(readpref.Primary())
 	// 连接mongodb
 	client, err := mongo.Connect(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
+
 	conn := DBConn{Database: conf.ReadConfigToString("mongodb", "database"), Client: client}
 	ORMConn = &conn
 	return ORMConn, nil
@@ -36,9 +74,26 @@ func (m Model) GetCollection(dest interface{}) string {
 		return v.TableName()
 	case *Table:
 		return (*v).TableName()
-	default:
-		return fmt.Sprint(v)
 	}
+	return ""
+}
+
+// 启动事务做函数调用
+func (m Model) Session(transactionFunc func(sessionContext mongo.SessionContext) (interface{}, error)) error {
+
+	session, err := m.Tx.Client.StartSession()
+	if err != nil {
+		return log.Error(err)
+	}
+	defer session.EndSession(context.Background())
+
+	_, err = session.WithTransaction(context.Background(), transactionFunc)
+
+	if err != nil {
+		return log.Error(err)
+	}
+
+	return err
 }
 
 type Table interface {
@@ -49,7 +104,6 @@ type Table interface {
 func convertToBSONM(data interface{}) bson.M {
 	bsonData := bson.M{}
 	val := reflect.ValueOf(data)
-
 	// Check if the value is a pointer, and if so, get the underlying element
 	if val.Kind() == reflect.Ptr {
 		val = val.Elem()
@@ -62,6 +116,15 @@ func convertToBSONM(data interface{}) bson.M {
 		fieldName := typ.Field(i).Tag.Get("bson")
 		// Skip fields with zero values
 		if !fieldIsZero(field) {
+			if fieldName == "_id" {
+				if _, ok := field.Interface().(primitive.ObjectID); !ok {
+					oid2, err := primitive.ObjectIDFromHex(fmt.Sprint(field.Interface()))
+					if err != nil {
+						bsonData[fieldName] = oid2
+						continue
+					}
+				}
+			}
 			bsonData[fieldName] = field.Interface()
 		}
 	}
@@ -79,17 +142,15 @@ func (m Model) Create(data interface{}) (id string, err error) {
 		m.Data = data
 	}
 	bsonData := convertToBSONM(m.Data)
-
-	log.Debugf("MongoCreate", "data: %+v", bsonData)
-	result, err := m.Tx.Client.Database(m.Tx.Database).Collection(m.GetCollection(m.Data)).InsertOne(context.Background(), bsonData)
+	// log.Debugf("data: %+v\n", bsonData)
+	result, err := m.Tx.Client.Database(m.Tx.Database).Collection(m.GetCollection(m.Data)).InsertOne(m.GetContext(), bsonData)
 	if err != nil {
-		return "", log.Error(err)
+		log.Error(err)
+		return "", err
 	}
 	id = result.InsertedID.(primitive.ObjectID).Hex()
-	if err == nil {
-		setIDField(m.Data, id)
-	}
-	log.Debugf("MongoCreate", "写入后的Date数据: %+v", m.Data)
+	setIDField(m.Data, id)
+	// log.Debugf("写入后的Date数据: %+v\n", m.Data)
 	return id, err
 }
 
@@ -98,13 +159,21 @@ func (m Model) Save(data interface{}) (id string, err error) {
 	if data != nil {
 		m.Data = data
 	}
+	bsonData := convertToBSONM(data)
+
+	log.Debugf("MongoDB保存条件: %v\n", bsonData)
+	log.Debugf("MongoDB保存Where条件: %v\n", m.WhereList)
+	update := bson.M{"$set": bsonData}
+
 	opts := options.Update().SetUpsert(true)
-	result, err := m.Tx.Client.Database(m.Tx.Database).Collection(m.GetCollection(m.Data)).UpdateOne(context.Background(), m.WhereList, data, opts)
+	result, err := m.Tx.Client.Database(m.Tx.Database).Collection(m.GetCollection(m.Data)).UpdateOne(m.GetContext(), m.WhereList, update, opts)
 	if err == nil {
 		id = fmt.Sprint(result.UpsertedID)
 	}
 	if id == "" {
-		id = fmt.Sprint(result.UpsertedID)
+		if m.WhereList["_id"] != nil {
+			id = fmt.Sprint(m.WhereList["_id"])
+		}
 	}
 	return
 }
@@ -114,14 +183,12 @@ func (m Model) Delete(data interface{}) error {
 	if data != nil {
 		m.Data = data
 	}
-	log.Debugf("MongoDelete", "m.WhereList: %v", m.WhereList)
-	result, err := m.Tx.Client.Database(m.Tx.Database).Collection(m.GetCollection(m.Data)).DeleteMany(context.Background(), m.WhereList)
+	_, err := m.Tx.Client.Database(m.Tx.Database).Collection(m.GetCollection(m.Data)).DeleteMany(m.GetContext(), m.WhereList)
 	if err != nil {
-		return log.Error(err)
+		log.Error(err)
 	}
-	log.Debugf("MongoDelete", "result: %v", result)
 
-	return nil
+	return err
 }
 
 // 修改
@@ -130,12 +197,14 @@ func (m Model) Update(data interface{}) error {
 		m.Data = data
 	}
 	bsonData := convertToBSONM(data)
-	log.Debugf("MongoUpdate", "MongoDB更新Update条件: %v", bsonData)
-	opts := options.Update().SetUpsert(false)
-	log.Debugf("MongoUpdate", "MongoDB更新Where条件: %v", m.WhereList)
+	log.Debugf("MongoDB更新Update条件: %v\n", bsonData)
+	opts := options.Update().SetUpsert(true)
+	log.Debugf("MongoDB更新Where条件: %v\n", m.WhereList)
+	delete(bsonData, "_id")
+
 	update := bson.M{"$set": bsonData}
 
-	_, err := m.Tx.Client.Database(m.Tx.Database).Collection(m.GetCollection(m.Data)).UpdateMany(context.Background(), m.WhereList, update, opts)
+	_, err := m.Tx.Client.Database(m.Tx.Database).Collection(m.GetCollection(m.Data)).UpdateMany(m.GetContext(), m.WhereList, update, opts)
 
 	if err != nil {
 		log.Error(err)

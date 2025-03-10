@@ -1,5 +1,11 @@
 package orm
 
+import (
+	"context"
+
+	"go.mongodb.org/mongo-driver/mongo"
+)
+
 // 为了避免识别错误设置Bool类型为int类型
 type BoolORM int
 
@@ -30,7 +36,9 @@ type ORMModel interface {
 	// 返回错误 考虑更新可能更新多条 不返回ID
 	// 传入的必须是结构体指针才可以修改原始数据
 	Update(data interface{}) error
-
+	Session(transactionFunc func(sessionContext mongo.SessionContext) (interface{}, error)) error
+	GetContext() context.Context
+	SetContext(ctx context.Context) ORMModel
 	// 删除
 	Delete(data interface{}) error
 
@@ -97,6 +105,8 @@ type ORMQuary interface {
 	All(data interface{}) error
 	// 返回查询个数
 	Count() (int64, error)
+	// 删除查询结果
+	Delete() error
 }
 
 // 分页
