@@ -6,7 +6,6 @@ import (
 	"sync"
 
 	orm "github.com/lfhy/morm/interface"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type Model struct {
@@ -28,7 +27,7 @@ func (m Model) Page(page, limit int) orm.ORMModel {
 	}
 	return m.Offset((page - 1) * limit).Limit(limit)
 }
-func (m Model) Session(transactionFunc func(sessionContext mongo.SessionContext) (interface{}, error)) error {
+func (m Model) Session(transactionFunc func(sessionContext context.Context) (interface{}, error)) error {
 	return errors.New("方法未实现")
 }
 func (m Model) GetContext() context.Context {

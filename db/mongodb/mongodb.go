@@ -79,21 +79,25 @@ func (m Model) GetCollection(dest interface{}) string {
 }
 
 // 启动事务做函数调用
-func (m Model) Session(transactionFunc func(sessionContext mongo.SessionContext) (interface{}, error)) error {
-
+func (m Model) Session(transactionFunc func(SessionContext context.Context) (interface{}, error)) error {
+	// 创建会话
 	session, err := m.Tx.Client.StartSession()
 	if err != nil {
 		return log.Error(err)
 	}
 	defer session.EndSession(context.Background())
 
-	_, err = session.WithTransaction(context.Background(), transactionFunc)
+	adaptedFunc := func(ctx mongo.SessionContext) (interface{}, error) {
+		return transactionFunc(ctx)
+	}
+
+	// 使用适配后的函数
+	_, err = session.WithTransaction(context.Background(), adaptedFunc)
 
 	if err != nil {
 		return log.Error(err)
 	}
-
-	return err
+	return nil
 }
 
 type Table interface {
