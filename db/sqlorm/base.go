@@ -3,7 +3,7 @@ package sqlorm
 import orm "github.com/lfhy/morm/interface"
 
 // 插入数据
-func (m Model) Create(data interface{}) (id string, err error) {
+func (m Model) Create(data any) (id string, err error) {
 	if data != nil {
 		m.Data = data
 	}
@@ -15,7 +15,7 @@ func (m Model) Create(data interface{}) (id string, err error) {
 }
 
 // 更新或插入数据
-func (m Model) Save(data interface{}) (id string, err error) {
+func (m Model) Save(data any) (id string, err error) {
 	if data != nil {
 		m.Data = data
 	}
@@ -27,7 +27,7 @@ func (m Model) Save(data interface{}) (id string, err error) {
 }
 
 // 删除
-func (m Model) Delete(data interface{}) error {
+func (m Model) Delete(data any) error {
 	if data != nil {
 		m.Data = data
 	}
@@ -35,7 +35,7 @@ func (m Model) Delete(data interface{}) error {
 }
 
 // 修改
-func (m Model) Update(data interface{}) error {
+func (m Model) Update(data any) error {
 	if data != nil {
 		m.Data = data
 	}

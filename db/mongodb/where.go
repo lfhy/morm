@@ -24,7 +24,7 @@ const (
 )
 
 // 限制条件
-func (m Model) Where(condition interface{}) orm.ORMModel {
+func (m Model) Where(condition any) orm.ORMModel {
 	return m.whereMode(condition, WhereIs)
 }
 
@@ -33,19 +33,19 @@ func (m Model) WhereIs(key string, value any) orm.ORMModel {
 	return m
 }
 
-func (m Model) WhereNot(condition interface{}) orm.ORMModel {
+func (m Model) WhereNot(condition any) orm.ORMModel {
 	return m.whereMode(condition, WhereNot)
 }
 
-func (m Model) WhereGt(condition interface{}) orm.ORMModel {
+func (m Model) WhereGt(condition any) orm.ORMModel {
 	return m.whereMode(condition, WhereGt)
 }
 
-func (m Model) WhereLt(condition interface{}) orm.ORMModel {
+func (m Model) WhereLt(condition any) orm.ORMModel {
 	return m.whereMode(condition, WhereLt)
 }
 
-func (m Model) WhereOr(condition interface{}) orm.ORMModel {
+func (m Model) WhereOr(condition any) orm.ORMModel {
 	return m.whereMode(condition, WhereOr)
 }
 
@@ -62,16 +62,16 @@ func (m Model) Offset(offset int) orm.ORMModel {
 }
 
 // 正序
-func (m Model) Asc(condition interface{}) orm.ORMModel {
+func (m Model) Asc(condition any) orm.ORMModel {
 	return m.whereMode(condition, OrderAsc)
 }
 
 // 逆序
-func (m Model) Desc(condition interface{}) orm.ORMModel {
+func (m Model) Desc(condition any) orm.ORMModel {
 	return m.whereMode(condition, OrderDesc)
 }
 
-func (m Model) whereMode(condition interface{}, mode int) orm.ORMModel {
+func (m Model) whereMode(condition any, mode int) orm.ORMModel {
 	t := reflect.ValueOf(condition)
 	if t.Kind() == reflect.Ptr {
 		if t.IsNil() {
@@ -161,7 +161,7 @@ func (m Model) makeQuary() options.FindOptions {
 
 	opts := options.Find()
 	if m.OpList != nil {
-		m.OpList.Range(func(key, value interface{}) bool {
+		m.OpList.Range(func(key, value any) bool {
 			if strings.HasPrefix(key.(string), "limit") {
 				opts = opts.SetLimit(value.(int64))
 				return true
@@ -185,7 +185,7 @@ func (m Model) makeQuary() options.FindOptions {
 	return *opts
 }
 
-func setIDField(dataStruct interface{}, value string) {
+func setIDField(dataStruct any, value string) {
 	val := reflect.ValueOf(dataStruct)
 	if val.Kind() == reflect.Ptr {
 		if val.IsNil() {

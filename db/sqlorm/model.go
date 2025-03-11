@@ -10,14 +10,14 @@ import (
 
 type Model struct {
 	tx     DBConn
-	Data   interface{}
+	Data   any
 	OpList *sync.Map        // key:操作模式Mode value:操作值
 	Ctx    *context.Context //上下文
 }
 
 var ORMConn *DBConn
 
-func (m DBConn) Model(data interface{}) orm.ORMModel {
+func (m DBConn) Model(data any) orm.ORMModel {
 	return Model{Data: data, OpList: &sync.Map{}, tx: m}
 }
 
@@ -27,7 +27,7 @@ func (m Model) Page(page, limit int) orm.ORMModel {
 	}
 	return m.Offset((page - 1) * limit).Limit(limit)
 }
-func (m Model) Session(transactionFunc func(sessionContext context.Context) (interface{}, error)) error {
+func (m Model) Session(transactionFunc func(sessionContext context.Context) (any, error)) error {
 	return errors.New("方法未实现")
 }
 func (m Model) GetContext() context.Context {

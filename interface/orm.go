@@ -16,29 +16,29 @@ const (
 
 type ORM interface {
 	// Model用于返回Orm模型 用于之后对模型的操作
-	Model(data interface{}) ORMModel
+	Model(data any) ORMModel
 }
 
 type ORMModel interface {
 	// 插入数据
 	// 返回ID和错误
 	// 传入的必须是结构体指针才可以修改原始数据
-	Create(data interface{}) (string, error)
+	Create(data any) (string, error)
 
 	// 更新或插入数据
 	// 返回ID和错误
 	// 传入的必须是结构体指针才可以修改原始数据
-	Save(data interface{}) (string, error)
+	Save(data any) (string, error)
 
 	// 更新
 	// 返回错误 考虑更新可能更新多条 不返回ID
 	// 传入的必须是结构体指针才可以修改原始数据
-	Update(data interface{}) error
-	Session(transactionFunc func(sessionContext context.Context) (interface{}, error)) error
+	Update(data any) error
+	Session(transactionFunc func(sessionContext context.Context) (any, error)) error
 	GetContext() context.Context
 	SetContext(ctx context.Context) ORMModel
 	// 删除
-	Delete(data interface{}) error
+	Delete(data any) error
 
 	// 查询数据
 	// 会根据限制条件生成查询函数
@@ -49,7 +49,7 @@ type ORMModel interface {
 	// Where只能传入结构体
 	// 会根据每个结构体的赋值情况进行查询
 	// 传入Where(&User{ID:123}) 会生成 WHERE User.ID = 123
-	Where(condition interface{}) ORMModel
+	Where(condition any) ORMModel
 
 	// WhereIs传入 key和value 根据生成表达式
 	WhereIs(key string, value any) ORMModel
@@ -57,22 +57,22 @@ type ORMModel interface {
 	// WhereNot只能传入结构体
 	// 会根据每个结构体的赋值情况进行查询
 	// 传入WhereNot(&User{ID:123}) 会生成 WHERE User.ID <> 123
-	WhereNot(condition interface{}) ORMModel
+	WhereNot(condition any) ORMModel
 
 	// WhereGt只能传入结构体
 	// 会根据每个结构体的赋值情况进行查询
 	// 传入WhereGt(&User{ID:123}) 会生成 WHERE User.ID > 123
-	WhereGt(condition interface{}) ORMModel
+	WhereGt(condition any) ORMModel
 
 	// WhereLt只能传入结构体
 	// 会根据每个结构体的赋值情况进行查询
 	// 传入WhereLt(&User{ID:123}) 会生成 WHERE User.ID < 123
-	WhereLt(condition interface{}) ORMModel
+	WhereLt(condition any) ORMModel
 
 	// WhereOr只能传入结构体
 	// 会根据每个结构体的赋值情况进行查询
 	// 传入Where(&User{ID:12}).WhereOr(&User{ID:123}) 会生成 WHERE User.ID = 12 OR User.ID = 123
-	WhereOr(condition interface{}) ORMModel
+	WhereOr(condition any) ORMModel
 
 	// 限制查询的数量
 	Limit(limit int) ORMModel
@@ -85,12 +85,12 @@ type ORMModel interface {
 	// 正序
 	// 传入结构体会根据结构体第一个有值的对象进行正序排序
 	// 如传入Asc(&User{ID:1}) 就会根据User.ID进行排序 ID值不会处理但是要排序的必须有值 且只会根据第一个有值对象进行排序
-	Asc(condition interface{}) ORMModel
+	Asc(condition any) ORMModel
 
 	// 逆序
 	// 传入结构体会根据结构体第一个有值的对象进行倒序排序
 	// 如传入Desc(&User{ID:1}) 就会根据User.ID进行排序 ID值不会处理但是要排序的必须有值 且只会根据第一个有值对象进行排序
-	Desc(condition interface{}) ORMModel
+	Desc(condition any) ORMModel
 
 	// 分页
 	Page(page, limit int) ORMModel
@@ -98,9 +98,9 @@ type ORMModel interface {
 
 type ORMQuary interface {
 	// 最后查询一条数据
-	One(data interface{}) error
+	One(data any) error
 	// 查询全部数据
-	All(data interface{}) error
+	All(data any) error
 	// 返回查询个数
 	Count() (int64, error)
 	// 删除查询结果

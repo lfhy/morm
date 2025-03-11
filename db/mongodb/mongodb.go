@@ -68,7 +68,7 @@ func Init() (orm.ORM, error) {
 }
 
 // 获取集合
-func (m Model) GetCollection(dest interface{}) string {
+func (m Model) GetCollection(dest any) string {
 	switch v := dest.(type) {
 	case Table:
 		return v.TableName()
@@ -79,7 +79,7 @@ func (m Model) GetCollection(dest interface{}) string {
 }
 
 // 启动事务做函数调用
-func (m Model) Session(transactionFunc func(SessionContext context.Context) (interface{}, error)) error {
+func (m Model) Session(transactionFunc func(SessionContext context.Context) (any, error)) error {
 	// 创建会话
 	session, err := m.Tx.Client.StartSession()
 	if err != nil {
@@ -87,7 +87,7 @@ func (m Model) Session(transactionFunc func(SessionContext context.Context) (int
 	}
 	defer session.EndSession(context.Background())
 
-	adaptedFunc := func(ctx mongo.SessionContext) (interface{}, error) {
+	adaptedFunc := func(ctx mongo.SessionContext) (any, error) {
 		return transactionFunc(ctx)
 	}
 
@@ -105,7 +105,7 @@ type Table interface {
 }
 
 // 转换data TO bsonM
-func convertToBSONM(data interface{}) bson.M {
+func convertToBSONM(data any) bson.M {
 	bsonData := bson.M{}
 	val := reflect.ValueOf(data)
 	// Check if the value is a pointer, and if so, get the underlying element
@@ -141,7 +141,7 @@ func fieldIsZero(field reflect.Value) bool {
 	return reflect.DeepEqual(field.Interface(), zeroValue.Interface())
 }
 
-func (m Model) Create(data interface{}) (id string, err error) {
+func (m Model) Create(data any) (id string, err error) {
 	if data != nil {
 		m.Data = data
 	}
@@ -159,7 +159,7 @@ func (m Model) Create(data interface{}) (id string, err error) {
 }
 
 // 更新或插入数据
-func (m Model) Save(data interface{}) (id string, err error) {
+func (m Model) Save(data any) (id string, err error) {
 	if data != nil {
 		m.Data = data
 	}
@@ -183,7 +183,7 @@ func (m Model) Save(data interface{}) (id string, err error) {
 }
 
 // 删除
-func (m Model) Delete(data interface{}) error {
+func (m Model) Delete(data any) error {
 	if data != nil {
 		m.Data = data
 	}
@@ -196,13 +196,13 @@ func (m Model) Delete(data interface{}) error {
 }
 
 // 修改
-func (m Model) Update(data interface{}) error {
+func (m Model) Update(data any) error {
 	if data != nil {
 		m.Data = data
 	}
 	bsonData := convertToBSONM(data)
 	log.Debugf("MongoDB更新Update条件: %v\n", bsonData)
-	opts := options.Update().SetUpsert(true)
+	opts := options.Update().SetUpsert(false)
 	log.Debugf("MongoDB更新Where条件: %v\n", m.WhereList)
 	delete(bsonData, "_id")
 

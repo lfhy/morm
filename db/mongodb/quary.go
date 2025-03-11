@@ -15,7 +15,7 @@ type Quary struct {
 	Where bson.M
 }
 
-func (q Quary) One(data interface{}) error {
+func (q Quary) One(data any) error {
 	log.Debugf("查询集合 %v ,Mongo查询条件: %+v \n", q.m.GetCollection(q.m.Data), q.m.WhereList)
 	result := q.m.Tx.Client.Database(q.m.Tx.Database).Collection(q.m.GetCollection(q.m.Data)).FindOne(q.m.GetContext(), q.m.WhereList)
 	err := result.Decode(data)
@@ -28,7 +28,7 @@ func (q Quary) One(data interface{}) error {
 }
 
 // 查询全部
-func (q Quary) All(data interface{}) error {
+func (q Quary) All(data any) error {
 	opts := q.m.makeQuary()
 	log.Debugf("查询集合 %v Mongo查询条件: %v\n", q.m.GetCollection(q.m.Data), q.m.WhereList)
 	log.Debugf("Mongo查询限制: %+v\n", opts)

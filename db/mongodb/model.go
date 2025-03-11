@@ -20,14 +20,14 @@ var ORMConn *DBConn
 
 type Model struct {
 	Tx        DBConn
-	Data      interface{}
+	Data      any
 	OpList    *sync.Map // key:操作模式Mode value:操作值
 	WhereList bson.M
 	Ctx       *context.Context //上下文
 
 }
 
-func (m DBConn) Model(data interface{}) orm.ORMModel {
+func (m DBConn) Model(data any) orm.ORMModel {
 	return Model{Data: data, Tx: m, WhereList: bson.M{}, OpList: &sync.Map{}}
 }
 
