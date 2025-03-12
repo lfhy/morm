@@ -171,14 +171,17 @@ func (m Model) Save(data any) (id string, err error) {
 
 	opts := options.Update().SetUpsert(true)
 	result, err := m.Tx.Client.Database(m.Tx.Database).Collection(m.GetCollection(m.Data)).UpdateOne(m.GetContext(), m.WhereList, update, opts)
-	if err == nil {
-		id = fmt.Sprint(result.UpsertedID)
+	if err != nil {
+		log.Error(err)
+		return "", err
 	}
+	id = result.UpsertedID.(primitive.ObjectID).Hex()
 	if id == "" {
 		if m.WhereList["_id"] != nil {
 			id = fmt.Sprint(m.WhereList["_id"])
 		}
 	}
+	setIDField(m.Data, id)
 	return
 }
 
