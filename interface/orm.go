@@ -28,15 +28,20 @@ type ORMModel interface {
 	// 更新或插入数据
 	// 返回ID和错误
 	// 传入的必须是结构体指针才可以修改原始数据
-	Save(data any) (string, error)
+	Save(data any, value ...any) (string, error)
 
 	// 更新
 	// 返回错误 考虑更新可能更新多条 不返回ID
 	// 传入的必须是结构体指针才可以修改原始数据
-	Update(data any) error
-	Session(transactionFunc func(sessionContext context.Context) (any, error)) error
+	Update(data any, value ...any) error
+
+	// 事务
+	Session(transactionFunc func(sessionContext context.Context) error) error
+
+	// 上下文
 	GetContext() context.Context
 	SetContext(ctx context.Context) ORMModel
+
 	// 删除
 	Delete(data any) error
 
@@ -49,7 +54,7 @@ type ORMModel interface {
 	// Where只能传入结构体
 	// 会根据每个结构体的赋值情况进行查询
 	// 传入Where(&User{ID:123}) 会生成 WHERE User.ID = 123
-	Where(condition any) ORMModel
+	Where(condition any, value ...any) ORMModel
 
 	// WhereIs传入 key和value 根据生成表达式
 	WhereIs(key string, value any) ORMModel
@@ -57,22 +62,22 @@ type ORMModel interface {
 	// WhereNot只能传入结构体
 	// 会根据每个结构体的赋值情况进行查询
 	// 传入WhereNot(&User{ID:123}) 会生成 WHERE User.ID <> 123
-	WhereNot(condition any) ORMModel
+	WhereNot(condition any, value ...any) ORMModel
 
 	// WhereGt只能传入结构体
 	// 会根据每个结构体的赋值情况进行查询
 	// 传入WhereGt(&User{ID:123}) 会生成 WHERE User.ID > 123
-	WhereGt(condition any) ORMModel
+	WhereGt(condition any, value ...any) ORMModel
 
 	// WhereLt只能传入结构体
 	// 会根据每个结构体的赋值情况进行查询
 	// 传入WhereLt(&User{ID:123}) 会生成 WHERE User.ID < 123
-	WhereLt(condition any) ORMModel
+	WhereLt(condition any, value ...any) ORMModel
 
 	// WhereOr只能传入结构体
 	// 会根据每个结构体的赋值情况进行查询
 	// 传入Where(&User{ID:12}).WhereOr(&User{ID:123}) 会生成 WHERE User.ID = 12 OR User.ID = 123
-	WhereOr(condition any) ORMModel
+	WhereOr(condition any, value ...any) ORMModel
 
 	// 限制查询的数量
 	Limit(limit int) ORMModel

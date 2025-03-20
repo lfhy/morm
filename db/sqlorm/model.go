@@ -2,10 +2,10 @@ package sqlorm
 
 import (
 	"context"
-	"errors"
 	"sync"
 
 	orm "github.com/lfhy/morm/interface"
+	"gorm.io/gorm"
 )
 
 type Model struct {
@@ -27,9 +27,13 @@ func (m Model) Page(page, limit int) orm.ORMModel {
 	}
 	return m.Offset((page - 1) * limit).Limit(limit)
 }
-func (m Model) Session(transactionFunc func(sessionContext context.Context) (any, error)) error {
-	return errors.New("方法未实现")
+
+func (m Model) Session(transactionFunc func(sessionContext context.Context) error) error {
+	return m.tx.Transaction(func(tx *gorm.DB) error {
+		return transactionFunc(m.GetContext())
+	})
 }
+
 func (m Model) GetContext() context.Context {
 	if m.Ctx != nil {
 		return *m.Ctx

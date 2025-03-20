@@ -15,11 +15,17 @@ func (m Model) Create(data any) (id string, err error) {
 }
 
 // 更新或插入数据
-func (m Model) Save(data any) (id string, err error) {
+func (m Model) Save(data any, value ...any) (id string, err error) {
 	if data != nil {
 		m.Data = data
 	}
-	err = m.makeQuary().Save(m.Data).Scan(m.Data).Error
+	q := m.makeQuary()
+	if len(value) > 0 {
+		if col, ok := data.(string); ok {
+			q.Set(col, value[0])
+		}
+	}
+	err = q.Save(m.Data).Scan(m.Data).Error
 	if err == nil {
 		id = m.getID(m.Data)
 	}
@@ -35,7 +41,13 @@ func (m Model) Delete(data any) error {
 }
 
 // 修改
-func (m Model) Update(data any) error {
+func (m Model) Update(data any, value ...any) error {
+	if len(value) > 0 {
+		col, ok := data.(string)
+		if ok {
+			return m.makeQuary().Update(col, value[0]).Error
+		}
+	}
 	if data != nil {
 		m.Data = data
 	}

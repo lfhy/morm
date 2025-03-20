@@ -21,7 +21,14 @@ const (
 )
 
 // 限制条件
-func (m Model) Where(condition any) orm.ORMModel {
+func (m Model) Where(condition any, value ...any) orm.ORMModel {
+	if len(value) > 0 {
+		key, ok := condition.(string)
+		if ok {
+			m.OpList.Store(fmt.Sprintf("where %s = ?", key), value[0])
+			return m
+		}
+	}
 	return m.whereMode(condition, WhereIs)
 }
 
@@ -30,19 +37,47 @@ func (m Model) WhereIs(key string, value any) orm.ORMModel {
 	return m
 }
 
-func (m Model) WhereNot(condition any) orm.ORMModel {
+func (m Model) WhereNot(condition any, value ...any) orm.ORMModel {
+	if len(value) > 0 {
+		key, ok := condition.(string)
+		if ok {
+			m.OpList.Store(fmt.Sprintf("not %s = ?", key), value[0])
+			return m
+		}
+	}
 	return m.whereMode(condition, WhereNot)
 }
 
-func (m Model) WhereGt(condition any) orm.ORMModel {
+func (m Model) WhereGt(condition any, value ...any) orm.ORMModel {
+	if len(value) > 0 {
+		key, ok := condition.(string)
+		if ok {
+			m.OpList.Store(fmt.Sprintf("where %s > ?", key), value[0])
+			return m
+		}
+	}
 	return m.whereMode(condition, WhereGt)
 }
 
-func (m Model) WhereLt(condition any) orm.ORMModel {
+func (m Model) WhereLt(condition any, value ...any) orm.ORMModel {
+	if len(value) > 0 {
+		key, ok := condition.(string)
+		if ok {
+			m.OpList.Store(fmt.Sprintf("where %s < ?", key), value[0])
+			return m
+		}
+	}
 	return m.whereMode(condition, WhereLt)
 }
 
-func (m Model) WhereOr(condition any) orm.ORMModel {
+func (m Model) WhereOr(condition any, value ...any) orm.ORMModel {
+	if len(value) > 0 {
+		key, ok := condition.(string)
+		if ok {
+			m.OpList.Store(fmt.Sprintf("or %s = ?", key), value[0])
+			return m
+		}
+	}
 	return m.whereMode(condition, WhereOr)
 }
 

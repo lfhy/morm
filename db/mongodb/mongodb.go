@@ -79,7 +79,7 @@ func (m Model) GetCollection(dest any) string {
 }
 
 // 启动事务做函数调用
-func (m Model) Session(transactionFunc func(SessionContext context.Context) (any, error)) error {
+func (m Model) Session(transactionFunc func(SessionContext context.Context) error) error {
 	// 创建会话
 	session, err := m.Tx.Client.StartSession()
 	if err != nil {
@@ -88,7 +88,7 @@ func (m Model) Session(transactionFunc func(SessionContext context.Context) (any
 	defer session.EndSession(context.Background())
 
 	adaptedFunc := func(ctx mongo.SessionContext) (any, error) {
-		return transactionFunc(ctx)
+		return nil, transactionFunc(ctx)
 	}
 
 	// 使用适配后的函数
@@ -105,7 +105,7 @@ type Table interface {
 }
 
 // 转换data TO bsonM
-func convertToBSONM(data any) bson.M {
+func convertToBSONM(data any, value ...any) bson.M {
 	bsonData := bson.M{}
 	val := reflect.ValueOf(data)
 	// Check if the value is a pointer, and if so, get the underlying element
@@ -132,7 +132,23 @@ func convertToBSONM(data any) bson.M {
 			bsonData[fieldName] = field.Interface()
 		}
 	}
-
+	if len(value) > 0 {
+		for _, data := range value {
+			bm, ok := data.(bson.M)
+			if ok {
+				for k, v := range bm {
+					bsonData[k] = v
+				}
+				continue
+			}
+			bd, ok := data.(bson.D)
+			if ok {
+				for _, v := range bd {
+					bsonData[v.Key] = v.Value
+				}
+			}
+		}
+	}
 	return bsonData
 }
 
@@ -159,11 +175,11 @@ func (m Model) Create(data any) (id string, err error) {
 }
 
 // 更新或插入数据
-func (m Model) Save(data any) (id string, err error) {
+func (m Model) Save(data any, value ...any) (id string, err error) {
 	if data != nil {
 		m.Data = data
 	}
-	bsonData := convertToBSONM(data)
+	bsonData := convertToBSONM(data, value...)
 
 	log.Debugf("MongoDB保存条件: %v\n", bsonData)
 	log.Debugf("MongoDB保存Where条件: %v\n", m.WhereList)
@@ -199,11 +215,11 @@ func (m Model) Delete(data any) error {
 }
 
 // 修改
-func (m Model) Update(data any) error {
+func (m Model) Update(data any, value ...any) error {
 	if data != nil {
 		m.Data = data
 	}
-	bsonData := convertToBSONM(data)
+	bsonData := convertToBSONM(data, value...)
 	log.Debugf("MongoDB更新Update条件: %v\n", bsonData)
 	opts := options.Update().SetUpsert(false)
 	log.Debugf("MongoDB更新Where条件: %v\n", m.WhereList)
