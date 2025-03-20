@@ -33,7 +33,7 @@ func (m Model) Where(condition any, value ...any) orm.ORMModel {
 }
 
 func (m Model) WhereIs(key string, value any) orm.ORMModel {
-	m.OpList.Store(fmt.Sprintf("where %s = ?", key), value)
+	m.OpList.Store(key, value)
 	return m
 }
 

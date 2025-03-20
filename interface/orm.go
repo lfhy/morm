@@ -28,11 +28,15 @@ type ORMModel interface {
 	// 更新或插入数据
 	// 返回ID和错误
 	// 传入的必须是结构体指针才可以修改原始数据
+	// Save(&User{ID:123}) 会生成 INSERT INTO User (ID) VALUES (123) ON DUPLICATE KEY UPDATE ID = 123
+	// Save("ID",123) 也会生成 INSERT INTO User (ID) VALUES (123) ON DUPLICATE KEY UPDATE ID = 123
 	Save(data any, value ...any) (string, error)
 
 	// 更新
 	// 返回错误 考虑更新可能更新多条 不返回ID
 	// 传入的必须是结构体指针才可以修改原始数据
+	// Update(&User{ID:123}) 会生成 UPDATE User SET ID = 123
+	// Update("ID",123) 也会生成 UPDATE User SET ID = 123
 	Update(data any, value ...any) error
 
 	// 事务
@@ -53,7 +57,8 @@ type ORMModel interface {
 	// 过滤条件
 	// Where只能传入结构体
 	// 会根据每个结构体的赋值情况进行查询
-	// 传入Where(&User{ID:123}) 会生成 WHERE User.ID = 123
+	// Where(&User{ID:123}) 会生成 WHERE User.ID = 123
+	// Where("ID",123) 也会生成 WHERE User.ID = 123
 	Where(condition any, value ...any) ORMModel
 
 	// WhereIs传入 key和value 根据生成表达式
@@ -61,22 +66,26 @@ type ORMModel interface {
 
 	// WhereNot只能传入结构体
 	// 会根据每个结构体的赋值情况进行查询
-	// 传入WhereNot(&User{ID:123}) 会生成 WHERE User.ID <> 123
+	// WhereNot(&User{ID:123}) 会生成 WHERE User.ID <> 123
+	// WhereNot("ID",123) 也会生成 WHERE User.ID <> 123
 	WhereNot(condition any, value ...any) ORMModel
 
 	// WhereGt只能传入结构体
 	// 会根据每个结构体的赋值情况进行查询
-	// 传入WhereGt(&User{ID:123}) 会生成 WHERE User.ID > 123
+	// WhereGt(&User{ID:123}) 会生成 WHERE User.ID > 123
+	// WhereGt("ID",123) 也会生成 WHERE User.ID > 123
 	WhereGt(condition any, value ...any) ORMModel
 
 	// WhereLt只能传入结构体
 	// 会根据每个结构体的赋值情况进行查询
-	// 传入WhereLt(&User{ID:123}) 会生成 WHERE User.ID < 123
+	// WhereLt(&User{ID:123}) 会生成 WHERE User.ID < 123
+	// WhereLt("ID",123) 也会生成 WHERE User.ID < 123
 	WhereLt(condition any, value ...any) ORMModel
 
 	// WhereOr只能传入结构体
 	// 会根据每个结构体的赋值情况进行查询
-	// 传入Where(&User{ID:12}).WhereOr(&User{ID:123}) 会生成 WHERE User.ID = 12 OR User.ID = 123
+	// Where(&User{ID:12}).WhereOr(&User{ID:123}) 会生成 WHERE User.ID = 12 OR User.ID = 123
+	// Where("ID",12).WhereOr("ID",123) 也会生成 WHERE User.ID = 12 OR User.ID = 123
 	WhereOr(condition any, value ...any) ORMModel
 
 	// 限制查询的数量
