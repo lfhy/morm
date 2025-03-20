@@ -19,7 +19,7 @@ func Error(v ...any) error {
 }
 
 func Errorf(format string, v ...any) error {
-	GetDBLoger().Error(ctx, format, v...)
+	GetDBLoger().Error(ctx, fmt.Sprintf(format, v...))
 	return fmt.Errorf(format, v...)
 }
 

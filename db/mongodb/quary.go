@@ -3,7 +3,7 @@ package mongodb
 import (
 	"context"
 
-	"github.com/lfhy/log"
+	"github.com/lfhy/morm/log"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -20,9 +20,10 @@ func (q Quary) One(data any) error {
 	result := q.m.Tx.Client.Database(q.m.Tx.Database).Collection(q.m.GetCollection(q.m.Data)).FindOne(q.m.GetContext(), q.m.WhereList)
 	err := result.Decode(data)
 	if err != nil {
-		log.Warnf("查询集合 %v ,Mongo查询条件: %+v 错误: %v\n", q.m.GetCollection(q.m.Data), q.m.WhereList, err)
+		log.Errorf("查询集合 %v ,Mongo查询条件: %+v 错误: %v\n", q.m.GetCollection(q.m.Data), q.m.WhereList, err)
+	} else {
+		log.Debugf("Mongo查询结果: %+v\n", data)
 	}
-	log.Debugf("Mongo查询结果: %+v\n", data)
 
 	return err
 }
@@ -36,12 +37,12 @@ func (q Quary) All(data any) error {
 
 	// log.Debugf("Mongo查询结果: %+v\n", result)
 	if err != nil {
-		log.Warnf("Mongo查出错: %v\n", err)
+		log.Errorf("Mongo查出错: %v\n", err)
 		return err
 	}
 	err = result.All(context.Background(), data)
 	if err != nil {
-		log.Warnf("mongdob查询数据ALL Decode失败: %v\n", err)
+		log.Errorf("mongdob查询数据ALL Decode失败: %v\n", err)
 	}
 	return err
 }
