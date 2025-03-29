@@ -10,6 +10,8 @@ import (
 	"github.com/lfhy/morm/conf"
 	"github.com/lfhy/morm/db/mongodb"
 	"github.com/lfhy/morm/db/mysql"
+	"github.com/lfhy/morm/db/sqlite"
+	orm "github.com/lfhy/morm/interface"
 	"github.com/lfhy/morm/log"
 	"gorm.io/gorm/logger"
 )
@@ -35,8 +37,8 @@ func initConfig() (err error) {
 	return err
 }
 
-func Init() *ORM {
-	var dbconn *ORM
+func Init() orm.ORM {
+	var dbconn orm.ORM
 	db := conf.ReadConfigToString("db", "type")
 	switch db {
 	case "mysql":
@@ -44,13 +46,19 @@ func Init() *ORM {
 		if err != nil {
 			panic(err)
 		}
-		dbconn = &conn
+		dbconn = conn
 	case "mongodb":
 		conn, err := mongodb.Init()
 		if err != nil {
 			panic(err)
 		}
-		dbconn = &conn
+		dbconn = conn
+	case "sqlite":
+		conn, err := sqlite.Init(InitDBLoger())
+		if err != nil {
+			panic(err)
+		}
+		dbconn = conn
 	}
 	return dbconn
 }
@@ -65,6 +73,14 @@ func InitMongoDB() *ORM {
 
 func InitMySQL() *ORM {
 	conn, err := mysql.Init(InitDBLoger())
+	if err != nil {
+		panic(err)
+	}
+	return &conn
+}
+
+func InitSQLite() *ORM {
+	conn, err := sqlite.Init(InitDBLoger())
 	if err != nil {
 		panic(err)
 	}

@@ -1,5 +1,5 @@
 # Morm
-混合ORM(Mixed orm)，配置数据源源即可轻松访问不同类型的数据库，目前支持```mysql```和```mongodb```，底层使用```gorm```和```mongo-driver```实现。
+混合ORM(Mixed orm)，配置数据源源即可轻松访问不同类型的数据库，目前支持```mysql```、```mongodb```和```sqlite```，底层使用```gorm```和```mongo-driver```实现。
 
 配置文件使用```viper```进行解析
 # 配置文件参考
@@ -38,6 +38,16 @@ max_open_conns = '100'
 user = 'orm'
 # mysql认证密码
 password = 'password'
+
+[sqlite]
+# sqlite数据库文件路径
+file_path = './data.db'
+# 连接最大生命时间
+conn_max_lifetime = '1h'
+# 最大空闲连接数
+max_idle_conns = '10'
+# 最大连接数
+max_open_conns = '100'
 ```
 
 # 使用案例
@@ -92,5 +102,4 @@ func main() {
 ```
 
 # TODO
-- 支持sqlite
 - 添加测试案例

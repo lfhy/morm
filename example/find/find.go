@@ -35,7 +35,7 @@ func main() {
 	var db DBSturct
 	db.ID = "123"
 
-	err = (*orm).Model(&db).Find().One(&db)
+	err = orm.Model(&db).Find().One(&db)
 	if err != nil {
 		fmt.Printf("查询失败:%v\n", err)
 		return
