@@ -82,6 +82,18 @@ type ORMModel interface {
 	// WhereLt("ID",123) 也会生成 WHERE User.ID < 123
 	WhereLt(condition any, value ...any) ORMModel
 
+	// WhereGte只能传入结构体
+	// 会根据每个结构体的赋值情况进行查询
+	// WhereGte(&User{ID:123}) 会生成 WHERE User.ID >= 123
+	// WhereGte("ID",123) 也会生成 WHERE User.ID >= 123
+	WhereGte(condition any, value ...any) ORMModel
+
+	// WhereLte只能传入结构体
+	// 会根据每个结构体的赋值情况进行查询
+	// WhereLte(&User{ID:123}) 会生成 WHERE User.ID <= 123
+	// WhereLte("ID",123) 也会生成 WHERE User.ID <= 123
+	WhereLte(condition any, value ...any) ORMModel
+
 	// WhereOr只能传入结构体
 	// 会根据每个结构体的赋值情况进行查询
 	// Where(&User{ID:12}).WhereOr(&User{ID:123}) 会生成 WHERE User.ID = 12 OR User.ID = 123

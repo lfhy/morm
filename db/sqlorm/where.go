@@ -18,6 +18,8 @@ const (
 	WhereOr
 	OrderAsc
 	OrderDesc
+	WhereGte
+	WhereLte
 )
 
 // 限制条件
@@ -68,6 +70,28 @@ func (m Model) WhereLt(condition any, value ...any) orm.ORMModel {
 		}
 	}
 	return m.whereMode(condition, WhereLt)
+}
+
+func (m Model) WhereGte(condition any, value ...any) orm.ORMModel {
+	if len(value) > 0 {
+		key, ok := condition.(string)
+		if ok {
+			m.OpList.Store(fmt.Sprintf("where %s >= ?", key), value[0])
+			return m
+		}
+	}
+	return m.whereMode(condition, WhereGte)
+}
+
+func (m Model) WhereLte(condition any, value ...any) orm.ORMModel {
+	if len(value) > 0 {
+		key, ok := condition.(string)
+		if ok {
+			m.OpList.Store(fmt.Sprintf("where %s <= ?", key), value[0])
+			return m
+		}
+	}
+	return m.whereMode(condition, WhereLte)
 }
 
 func (m Model) WhereOr(condition any, value ...any) orm.ORMModel {
@@ -141,6 +165,10 @@ func (m Model) whereMode(condition any, mode int) orm.ORMModel {
 							m.OpList.Store(fmt.Sprintf("asc %s", strings.TrimPrefix(v2, "column:")), "")
 						case OrderDesc:
 							m.OpList.Store(fmt.Sprintf("desc %s", strings.TrimPrefix(v2, "column:")), "")
+						case WhereGte:
+							m.OpList.Store(fmt.Sprintf("where %s >= ?", strings.TrimPrefix(v2, "column:")), t.Field(i).Interface())
+						case WhereLte:
+							m.OpList.Store(fmt.Sprintf("where %s <= ?", strings.TrimPrefix(v2, "column:")), t.Field(i).Interface())
 						}
 
 						continue l1

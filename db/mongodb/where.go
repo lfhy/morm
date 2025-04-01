@@ -21,6 +21,8 @@ const (
 	WhereOr
 	OrderAsc
 	OrderDesc
+	WhereGte
+	WhereLte
 )
 
 // 限制条件
@@ -71,6 +73,28 @@ func (m Model) WhereLt(condition any, value ...any) orm.ORMModel {
 		}
 	}
 	return m.whereMode(condition, WhereLt)
+}
+
+func (m Model) WhereGte(condition any, value ...any) orm.ORMModel {
+	if len(value) > 0 {
+		key, ok := condition.(string)
+		if ok {
+			m.WhereList[key] = bson.M{"$gte": value[0]}
+			return m
+		}
+	}
+	return m.whereMode(condition, WhereGte)
+}
+
+func (m Model) WhereLte(condition any, value ...any) orm.ORMModel {
+	if len(value) > 0 {
+		key, ok := condition.(string)
+		if ok {
+			m.WhereList[key] = bson.M{"$lte": value[0]}
+			return m
+		}
+	}
+	return m.whereMode(condition, WhereLte)
 }
 
 func (m Model) WhereOr(condition any, value ...any) orm.ORMModel {
@@ -177,6 +201,10 @@ func (m Model) whereMode(condition any, mode int) orm.ORMModel {
 					m.WhereList[v] = bson.M{"$gt": t.Field(i).Interface()}
 				case WhereLt:
 					m.WhereList[v] = bson.M{"$lt": t.Field(i).Interface()}
+				case WhereGte:
+					m.WhereList[v] = bson.M{"$gte": t.Field(i).Interface()}
+				case WhereLte:
+					m.WhereList[v] = bson.M{"$lte": t.Field(i).Interface()}
 				case WhereOr:
 					m.WhereList[v] = bson.M{"$or": t.Field(i).Interface()}
 				case OrderAsc:
