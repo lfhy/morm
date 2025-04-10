@@ -274,7 +274,7 @@ func (m Model) makeQuary() options.FindOptions {
 
 func setIDField(dataStruct any, value string) {
 	val := reflect.ValueOf(dataStruct)
-	if val.Kind() == reflect.Ptr {
+	for val.Kind() == reflect.Ptr {
 		if val.IsNil() {
 			val = reflect.New(val.Type())
 		}
