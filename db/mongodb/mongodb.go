@@ -111,7 +111,7 @@ func convertToBSONM(data any) bson.M {
 	bsonData := bson.M{}
 	val := reflect.ValueOf(data)
 	// Check if the value is a pointer, and if so, get the underlying element
-	if val.Kind() == reflect.Ptr {
+	for val.Kind() == reflect.Ptr {
 		val = val.Elem()
 	}
 
