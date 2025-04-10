@@ -2,10 +2,7 @@ package morm
 
 import (
 	"fmt"
-	glog "log"
-	"os"
 	"sync"
-	"time"
 
 	"github.com/lfhy/morm/conf"
 	"github.com/lfhy/morm/db/mongodb"
@@ -13,7 +10,6 @@ import (
 	"github.com/lfhy/morm/db/sqlite"
 	orm "github.com/lfhy/morm/interface"
 	"github.com/lfhy/morm/log"
-	"gorm.io/gorm/logger"
 )
 
 var (
@@ -42,7 +38,7 @@ func Init() orm.ORM {
 	db := conf.ReadConfigToString("db", "type")
 	switch db {
 	case "mysql":
-		conn, err := mysql.Init(InitDBLoger())
+		conn, err := mysql.Init(log.InitDBLoger())
 		if err != nil {
 			panic(err)
 		}
@@ -54,7 +50,7 @@ func Init() orm.ORM {
 		}
 		dbconn = conn
 	case "sqlite":
-		conn, err := sqlite.Init(InitDBLoger())
+		conn, err := sqlite.Init(log.InitDBLoger())
 		if err != nil {
 			panic(err)
 		}
@@ -72,7 +68,7 @@ func InitMongoDB() *ORM {
 }
 
 func InitMySQL() *ORM {
-	conn, err := mysql.Init(InitDBLoger())
+	conn, err := mysql.Init(log.InitDBLoger())
 	if err != nil {
 		panic(err)
 	}
@@ -80,25 +76,9 @@ func InitMySQL() *ORM {
 }
 
 func InitSQLite() *ORM {
-	conn, err := sqlite.Init(InitDBLoger())
+	conn, err := sqlite.Init(log.InitDBLoger())
 	if err != nil {
 		panic(err)
 	}
 	return &conn
-}
-
-func InitDBLoger() logger.Interface {
-	LogName := conf.ReadConfigToString("db", "log")
-	f, err := os.OpenFile(LogName, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
-	if err != nil && err != os.ErrExist {
-		log.Errorln("数据库", "日志初始化失败")
-		f = os.Stdout
-	}
-
-	return logger.New(glog.New(f, "\r\n", glog.LstdFlags), logger.Config{
-		SlowThreshold:             200 * time.Millisecond,                                  // 慢 SQL 阈值
-		LogLevel:                  logger.LogLevel(conf.ReadConfigToInt("db", "loglevel")), // 日志级别
-		IgnoreRecordNotFoundError: false,                                                   // 忽略ErrRecordNotFound（记录未找到）错误
-		Colorful:                  false,                                                   // 禁用彩色打印
-	})
 }

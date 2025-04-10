@@ -4,6 +4,7 @@ import (
 	"fmt"
 	glog "log"
 	"os"
+	"path/filepath"
 	"sync"
 	"time"
 
@@ -21,6 +22,7 @@ func InitDBLoger() logger.Interface {
 		return *logout
 	}
 	LogName := conf.ReadConfigToString("db", "log")
+	os.MkdirAll(filepath.Dir(LogName), 0755)
 	f, err := os.OpenFile(LogName, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 	if err != nil && err != os.ErrExist {
 		fmt.Println("数据库", "日志初始化失败")
