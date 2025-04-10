@@ -235,13 +235,25 @@ func (m Model) whereMode(condition any, mode int) orm.ORMModel {
 
 func (m Model) CheckOID() {
 	if m.WhereList["_id"] != nil {
-		if _, ok := m.WhereList["_id"].(primitive.ObjectID); !ok {
-			// 如果不是 primitive.M 类型，进行转换
+		switch m.WhereList["_id"].(type) {
+		case primitive.ObjectID, map[string]primitive.ObjectID:
+			return
+		case string:
 			ids, err := primitive.ObjectIDFromHex(fmt.Sprint(m.WhereList["_id"]))
 			if err != nil {
-				log.Error(err)
+				log.Error("转换失败:", err, "原始ID:", m.WhereList["_id"])
 			}
 			m.WhereList["_id"] = ids
+		case map[string]string:
+			mp := make(map[string]primitive.ObjectID)
+			for key, value := range m.WhereList["_id"].(map[string]string) {
+				ids, err := primitive.ObjectIDFromHex(value)
+				if err != nil {
+					log.Error("转换失败:", err, "原始ID:", value)
+				}
+				mp[key] = ids
+			}
+			m.WhereList["_id"] = mp
 		}
 	}
 }
