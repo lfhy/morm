@@ -16,8 +16,9 @@ type Quary struct {
 }
 
 func (q Quary) One(data any) error {
-	log.Debugf("查询集合 %v ,Mongo查询条件: %+v \n", q.m.GetCollection(q.m.Data), q.m.WhereList)
-	result := q.m.Tx.Client.Database(q.m.Tx.Database).Collection(q.m.GetCollection(q.m.Data)).FindOne(q.m.GetContext(), q.m.WhereList)
+	opts := q.m.makeOneQuary()
+	log.Debugf("查询集合 %v ,Mongo查询条件: %+v %+v", q.m.GetCollection(q.m.Data), q.m.WhereList, opts)
+	result := q.m.Tx.Client.Database(q.m.Tx.Database).Collection(q.m.GetCollection(q.m.Data)).FindOne(q.m.GetContext(), q.m.WhereList, &opts)
 	err := result.Decode(data)
 	if err != nil {
 		log.Errorf("查询集合 %v ,Mongo查询条件: %+v 错误: %v\n", q.m.GetCollection(q.m.Data), q.m.WhereList, err)
@@ -30,8 +31,8 @@ func (q Quary) One(data any) error {
 
 // 查询全部
 func (q Quary) All(data any) error {
-	opts := q.m.makeQuary()
-	log.Debugf("查询集合 %v Mongo查询条件: %v\n", q.m.GetCollection(q.m.Data), q.m.WhereList)
+	opts := q.m.makeAllQuary()
+	log.Debugf("查询集合 %v Mongo查询条件: %v %v", q.m.GetCollection(q.m.Data), q.m.WhereList, opts)
 	log.Debugf("Mongo查询限制: %+v\n", opts)
 	result, err := q.m.Tx.Client.Database(q.m.Tx.Database).Collection(q.m.GetCollection(q.m.Data)).Find(q.m.GetContext(), q.m.WhereList, &opts)
 

@@ -107,11 +107,10 @@ func (m Model) GetCollection(dest any) string {
 		m.Collection = v.TableName()
 	case *Table:
 		m.Collection = (*v).TableName()
+	case string:
+		m.Collection = fmt.Sprint(dest)
 	default:
 		m.Collection = reflect.TypeOf(dest).Elem().Name()
-	}
-	if m.Collection == "" {
-		m.Collection = fmt.Sprint(dest)
 	}
 	return m.Collection
 }
@@ -181,6 +180,7 @@ func fieldIsZero(field reflect.Value) bool {
 }
 
 func (m Model) Create(data any) (id string, err error) {
+	m.CheckOID()
 	if data != nil {
 		m.Data = data
 	}
@@ -199,6 +199,7 @@ func (m Model) Create(data any) (id string, err error) {
 
 // 更新或插入数据
 func (m Model) Save(data any, value ...any) (id string, err error) {
+	m.CheckOID()
 	if data != nil {
 		m.Data = data
 	}
@@ -243,6 +244,7 @@ func (m Model) Save(data any, value ...any) (id string, err error) {
 
 // 删除
 func (m Model) Delete(data any) error {
+	m.CheckOID()
 	if data != nil {
 		m.Data = data
 	}
@@ -256,6 +258,7 @@ func (m Model) Delete(data any) error {
 
 // 修改
 func (m Model) Update(data any, value ...any) error {
+	m.CheckOID()
 	if data != nil {
 		m.Data = data
 	}
@@ -294,5 +297,6 @@ func (m Model) Update(data any, value ...any) error {
 
 // 查询数据
 func (m Model) Find() orm.ORMQuary {
+	m.CheckOID()
 	return Quary{m: m, Where: m.WhereList}
 }

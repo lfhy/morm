@@ -230,6 +230,10 @@ func (m Model) whereMode(condition any, mode int) orm.ORMModel {
 			}
 		}
 	}
+	return m
+}
+
+func (m Model) CheckOID() {
 	if m.WhereList["_id"] != nil {
 		if _, ok := m.WhereList["_id"].(primitive.ObjectID); !ok {
 			// 如果不是 primitive.M 类型，进行转换
@@ -239,13 +243,10 @@ func (m Model) whereMode(condition any, mode int) orm.ORMModel {
 			}
 			m.WhereList["_id"] = ids
 		}
-
 	}
-	return m
 }
 
-func (m Model) makeQuary() options.FindOptions {
-
+func (m Model) makeAllQuary() options.FindOptions {
 	opts := options.Find()
 	if m.OpList != nil {
 		m.OpList.Range(func(key, value any) bool {
@@ -267,7 +268,28 @@ func (m Model) makeQuary() options.FindOptions {
 			}
 			return true
 		})
+	}
+	return *opts
+}
 
+func (m Model) makeOneQuary() options.FindOneOptions {
+	opts := options.FindOne()
+	if m.OpList != nil {
+		m.OpList.Range(func(key, value any) bool {
+			if strings.HasPrefix(key.(string), "offset") {
+				opts = opts.SetSkip(value.(int64))
+				return true
+			}
+			if strings.HasPrefix(key.(string), "asc") {
+				opts = opts.SetSort(value)
+				return true
+			}
+			if strings.HasPrefix(key.(string), "desc") {
+				opts = opts.SetSort(value)
+				return true
+			}
+			return true
+		})
 	}
 	return *opts
 }
