@@ -17,6 +17,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
+	"go.mongodb.org/mongo-driver/mongo/writeconcern"
 )
 
 func Init() (orm.ORM, error) {
@@ -46,6 +47,12 @@ func Init() (orm.ORM, error) {
 		}
 	}
 	poolSize := conf.ReadConfigToInt("mongodb", "option_pool_size")
+	readMode := conf.ReadConfigToString("mongodb", "readmode")
+	W := conf.ReadConfigToInt("mongodb", "w")
+	if W == 0 {
+		//只写到主节点
+		W = 1
+	}
 	if poolSize == 0 {
 		poolSize = 150
 	}
@@ -57,25 +64,56 @@ func Init() (orm.ORM, error) {
 	// 只读取主节点
 	opts.SetReadPreference(readpref.Primary())
 	// 连接mongodb
+	// // 写确认
+	opts.SetWriteConcern(&writeconcern.WriteConcern{
+		W:        W,
+		WTimeout: 1 * time.Second,
+	})
+	// 连接mongodb
 	client, err := mongo.Connect(ctx, opts)
+
 	if err != nil {
 		return nil, err
 	}
-
-	conn := DBConn{Database: conf.ReadConfigToString("mongodb", "database"), Client: client}
+	conn := DBConn{Database: conf.ReadConfigToString("mongodb", "database"), Client: client, NearestClient: client}
 	ORMConn = &conn
+	if readMode == "master" {
+		return ORMConn, nil
+	}
+
+	// 使用就近读取
+	opts.SetReadPreference(readpref.Nearest(
+		readpref.WithHedgeEnabled(true),
+		readpref.WithMaxStaleness(5*time.Minute),
+	))
+	// 连接mongodb
+	nearestClient, err := mongo.Connect(ctx, opts)
+	if err != nil {
+		client.Disconnect(ctx)
+		return nil, err
+	}
+	conn.NearestClient = nearestClient
+
 	return ORMConn, nil
 }
 
 // 获取集合
 func (m Model) GetCollection(dest any) string {
+	if m.Collection != "" {
+		return m.Collection
+	}
 	switch v := dest.(type) {
 	case Table:
-		return v.TableName()
+		m.Collection = v.TableName()
 	case *Table:
-		return (*v).TableName()
+		m.Collection = (*v).TableName()
+	default:
+		m.Collection = reflect.TypeOf(dest).Elem().Name()
 	}
-	return ""
+	if m.Collection == "" {
+		m.Collection = fmt.Sprint(dest)
+	}
+	return m.Collection
 }
 
 // 启动事务做函数调用
@@ -147,7 +185,7 @@ func (m Model) Create(data any) (id string, err error) {
 		m.Data = data
 	}
 	bsonData := convertToBSONM(m.Data)
-	// log.Debugf("data: %+v\n", bsonData)
+	log.Debugf("创建MongoDB数据: %+v\n", bsonData)
 	result, err := m.Tx.Client.Database(m.Tx.Database).Collection(m.GetCollection(m.Data)).InsertOne(m.GetContext(), bsonData)
 	if err != nil {
 		log.Error(err)

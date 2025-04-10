@@ -10,7 +10,7 @@ var ctx = context.Background()
 
 // 错误
 func Errorln(v ...any) error {
-	GetDBLoger().Error(ctx, "", fmt.Sprint(v...))
+	GetDBLoger().Error(ctx, "%s", fmt.Sprint(v...))
 	return errors.New(fmt.Sprint(v...))
 }
 
