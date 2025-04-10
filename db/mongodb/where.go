@@ -254,6 +254,26 @@ func (m Model) CheckOID() {
 				mp[key] = ids
 			}
 			m.WhereList["_id"] = mp
+		case bson.M:
+			for key, value := range m.WhereList["_id"].(bson.M) {
+				if key == "$in" {
+					mp := make([]primitive.ObjectID, 0)
+					for _, v := range value.([]string) {
+						ids, err := primitive.ObjectIDFromHex(v)
+						if err != nil {
+							log.Error("转换失败:", err, "原始ID:", v)
+						}
+						mp = append(mp, ids)
+					}
+					m.WhereList["_id"].(bson.M)[key] = mp
+				} else {
+					ids, err := primitive.ObjectIDFromHex(fmt.Sprint(value))
+					if err != nil {
+						log.Error("转换失败:", err, "原始ID:", value)
+					}
+					m.WhereList["_id"].(bson.M)[key] = ids
+				}
+			}
 		}
 	}
 }
