@@ -232,11 +232,12 @@ func (m Model) Save(data any, value ...any) (id string, err error) {
 		log.Error(err)
 		return "", err
 	}
-	id = result.UpsertedID.(primitive.ObjectID).Hex()
-	if id == "" {
+	if result.UpsertedID == nil {
 		if m.WhereList["_id"] != nil {
 			id = fmt.Sprint(m.WhereList["_id"])
 		}
+	} else {
+		id = result.UpsertedID.(primitive.ObjectID).Hex()
 	}
 	setIDField(m.Data, id)
 	return
