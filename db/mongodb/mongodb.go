@@ -2,6 +2,7 @@ package mongodb
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/url"
 	"reflect"
@@ -300,4 +301,21 @@ func (m Model) Update(data any, value ...any) error {
 func (m Model) Find() orm.ORMQuary {
 	m.CheckOID()
 	return Quary{m: m, Where: m.WhereList}
+}
+
+func (m Model) BulkWrite(datas any, order bool) error {
+	models, ok := datas.([]mongo.WriteModel)
+	if !ok {
+		return errors.New("datas must be []mongo.WriteModel")
+	}
+	// 不需要写入时，直接返回
+	if len(models) == 0 {
+		return nil
+	}
+	m.CheckOID()
+
+	// 执行批量写入操作
+	bulkWriteOpts := options.BulkWrite().SetOrdered(order) // 设置为无序时 提高性能
+	_, err := m.Tx.Client.Database(m.Tx.Database).Collection(m.GetCollection(m.Data)).BulkWrite(context.TODO(), models, bulkWriteOpts)
+	return err
 }

@@ -2,6 +2,8 @@ package orm
 
 import (
 	"context"
+
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // 为了避免识别错误设置Bool类型为int类型
@@ -38,6 +40,12 @@ type ORMModel interface {
 	// Update(&User{ID:123}) 会生成 UPDATE User SET ID = 123
 	// Update("ID",123) 也会生成 UPDATE User SET ID = 123
 	Update(data any, value ...any) error
+
+	// 批量写入
+	// 在mongo中datas为[]MongoBulkWriteOperation
+	// 在sql中datas为[]BulkWriteOperation
+	// order为写入是否是有序 mongo中使用无序可以提高性能
+	BulkWrite(datas any, order bool) error
 
 	// 事务
 	Session(transactionFunc func(sessionContext context.Context) error) error
@@ -140,3 +148,12 @@ func Page(m *ORMModel, page, limit int) {
 	}
 	(*m).Offset((page - 1) * limit).Limit(limit)
 }
+
+type BulkWriteOperation struct {
+	Type   string // "insert", "update", "delete"
+	Data   any
+	Where  map[string]any
+	Values map[string]any
+}
+
+type MongoBulkWriteOperation = mongo.WriteModel

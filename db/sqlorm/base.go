@@ -1,6 +1,11 @@
 package sqlorm
 
-import orm "github.com/lfhy/morm/interface"
+import (
+	"errors"
+	"fmt"
+
+	orm "github.com/lfhy/morm/interface"
+)
 
 // 插入数据
 func (m Model) Create(data any) (id string, err error) {
@@ -57,4 +62,89 @@ func (m Model) Update(data any, value ...any) error {
 // 查询数据
 func (m Model) Find() orm.ORMQuary {
 	return Quary{m: m, OpList: m.OpList}
+}
+
+/*
+**
+
+	operations := []BulkWriteOperation{
+	    {
+	        Type: "insert",
+	        Data: &User{Name: "Alice"},
+	    },
+	    {
+	        Type:  "update",
+	        Data:  &User{},
+	        Where: map[string]any{"name": "Bob"},
+	        Values: map[string]any{"age": 30},
+	    },
+	    {
+	        Type:  "delete",
+	        Data:  &User{},
+	        Where: map[string]any{"name": "Charlie"},
+	    },
+	}
+
+err := model.BulkWrite(operations, true)
+**
+*/
+func (m Model) BulkWrite(datas any, order bool) error {
+	operations, ok := datas.([]orm.BulkWriteOperation)
+	if !ok {
+		return errors.New("datas must be []orm.BulkWriteOperation")
+	}
+
+	if len(operations) == 0 {
+		return nil
+	}
+
+	tx := m.tx.getDB().Begin()
+	if tx.Error != nil {
+		return tx.Error
+	}
+
+	for _, op := range operations {
+		switch op.Type {
+		case "insert":
+			if err := tx.Create(op.Data).Error; err != nil {
+				if order {
+					tx.Rollback()
+					return err
+				}
+				continue
+			}
+		case "update":
+			q := tx.Model(op.Data)
+			if len(op.Where) > 0 {
+				q = q.Where(op.Where)
+			}
+			if err := q.Updates(op.Values).Error; err != nil {
+				if order {
+					tx.Rollback()
+					return err
+				}
+				continue
+			}
+		case "delete":
+			q := tx.Model(op.Data)
+			if len(op.Where) > 0 {
+				q = q.Where(op.Where)
+			}
+			if err := q.Delete(op.Data).Error; err != nil {
+				if order {
+					tx.Rollback()
+					return err
+				}
+				continue
+			}
+		default:
+			if order {
+				tx.Rollback()
+				return fmt.Errorf("unsupported operation type: %s", op.Type)
+			}
+			continue
+		}
+	}
+
+	return tx.Commit().Error
 }

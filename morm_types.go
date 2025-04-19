@@ -19,3 +19,7 @@ type ORM = orm.ORM
 type ORMModel = orm.ORMModel
 
 type ORMQuary = orm.ORMQuary
+
+type BulkWriteOperation = orm.BulkWriteOperation
+
+type MongoBulkWriteOperation = orm.MongoBulkWriteOperation
