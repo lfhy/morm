@@ -336,6 +336,9 @@ func setIDField(dataStruct any, value string) {
 	}
 	idField := val.FieldByName("ID")
 	if idField.IsValid() && idField.CanSet() {
-		idField.Set(reflect.ValueOf(value))
+		// 判断是否是string类型
+		if idField.Type() == reflect.TypeOf(value) {
+			idField.Set(reflect.ValueOf(value))
+		}
 	}
 }
