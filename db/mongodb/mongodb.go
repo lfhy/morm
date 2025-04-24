@@ -244,7 +244,20 @@ func (m Model) Create(data any) (id string, err error) {
 		log.Error(err)
 		return "", err
 	}
-	id = result.InsertedID.(primitive.ObjectID).Hex()
+	if result.InsertedID == nil {
+		if m.WhereList["_id"] != nil {
+			id = fmt.Sprint(m.WhereList["_id"])
+		}
+	} else {
+		switch result.InsertedID.(type) {
+		case primitive.ObjectID:
+			id = result.InsertedID.(primitive.ObjectID).Hex()
+		case string:
+			id = result.InsertedID.(string)
+		default:
+			id = fmt.Sprint(result.InsertedID)
+		}
+	}
 	setIDField(m.Data, id)
 	// log.Debugf("写入后的Date数据: %+v\n", m.Data)
 	return id, err
