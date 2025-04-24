@@ -338,14 +338,14 @@ func (m Model) Update(data any, value ...any) error {
 	if data != nil {
 		m.Data = data
 	}
-	bsonData, err := ConvertToBSONM(data)
+	bsonData, err := ConvertToBSONM(m.Data)
 	if err != nil {
 		return err
 	}
+	delete(bsonData, "_id")
+	log.Debugf("MongoDB更新bsonData: %+v\n", bsonData)
 	opts := options.Update().SetUpsert(false)
 	log.Debugf("MongoDB更新Where条件: %v\n", m.WhereList)
-	delete(bsonData, "_id")
-
 	update := bson.M{"$set": bsonData}
 	if len(value) > 0 {
 		for _, data := range value {
@@ -364,7 +364,7 @@ func (m Model) Update(data any, value ...any) error {
 			}
 		}
 	}
-	log.Debugf("MongoDB保存条件: %+v\n", update)
+	log.Debugf("MongoDB更新条件: %+v\n", update)
 
 	_, err = m.Tx.Client.Database(m.Tx.Database).Collection(m.GetCollection(m.Data)).UpdateMany(m.GetContext(), m.WhereList, update, opts)
 	if err != nil {
