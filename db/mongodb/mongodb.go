@@ -180,17 +180,17 @@ func ConvertToBSONM(data any) (bson.M, error) {
 			fieldName = strings.ToLower(structField.Name) // 默认字段名
 		}
 
-		// 是否跳过零值（根据 omitempty 标志）
-		omitempty := false
+		// 是否设置零值（根据 must 标志）
+		must := false
 		for _, part := range parts[1:] {
-			if part == "omitempty" {
-				omitempty = true
+			if part == "must" {
+				must = true
 				break
 			}
 		}
 
 		// 检查零值并跳过（若需要）
-		if omitempty && isZero(field) {
+		if !must && isZero(field) {
 			continue
 		}
 

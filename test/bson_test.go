@@ -11,8 +11,8 @@ type Data struct {
 	Str     string `bson:"str"`
 	Int     int    `bson:"int"`
 	Bool    bool   `bson:"bool"`
-	BoolPtr *bool  `bson:"bool_ptr,omitempty"`
-	Empty   string `bson:"empty,omitempty"`
+	BoolPtr *bool  `bson:"bool_ptr,must"`
+	Empty   string `bson:"empty,must"`
 }
 
 func TestBSON(t *testing.T) {
