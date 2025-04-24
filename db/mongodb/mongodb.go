@@ -292,7 +292,14 @@ func (m Model) Save(data any, value ...any) (id string, err error) {
 			id = fmt.Sprint(m.WhereList["_id"])
 		}
 	} else {
-		id = result.UpsertedID.(primitive.ObjectID).Hex()
+		switch result.UpsertedID.(type) {
+		case primitive.ObjectID:
+			id = result.UpsertedID.(primitive.ObjectID).Hex()
+		case string:
+			id = result.UpsertedID.(string)
+		default:
+			id = fmt.Sprint(result.UpsertedID)
+		}
 	}
 	setIDField(m.Data, id)
 	return
