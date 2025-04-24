@@ -194,14 +194,6 @@ func ConvertToBSONM(data any) (bson.M, error) {
 			continue
 		}
 
-		// 处理 _id 字段的特殊逻辑
-		if fieldName == "_id" || strings.ToLower(fieldName) == "id" {
-			if err := handleObjectID(field, bsonData); err != nil {
-				return nil, err
-			}
-			continue
-		}
-
 		// 处理指针问题
 		if field.Kind() == reflect.Ptr {
 			if field.IsNil() {
@@ -225,22 +217,6 @@ func ConvertToBSONM(data any) (bson.M, error) {
 	}
 
 	return bsonData, nil
-}
-
-// 辅助函数：处理 ObjectID 转换
-func handleObjectID(field reflect.Value, bsonData bson.M) error {
-	if objID, ok := field.Interface().(primitive.ObjectID); ok {
-		bsonData["_id"] = objID
-		return nil
-	}
-
-	strID := fmt.Sprint(field.Interface())
-	if oid, err := primitive.ObjectIDFromHex(strID); err == nil {
-		bsonData["_id"] = oid
-		return nil
-	}
-
-	return fmt.Errorf("invalid ObjectID format for _id field: %v", strID)
 }
 
 // 辅助函数：判断零值
