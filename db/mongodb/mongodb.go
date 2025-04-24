@@ -274,7 +274,10 @@ func (m Model) Save(data any, value ...any) (id string, err error) {
 		return "", err
 	}
 	log.Debugf("MongoDB保存Where条件: %+v\n", m.WhereList)
-	update := bson.M{"$set": bsonData}
+	update := make(bson.M)
+	if len(bsonData) != 0 {
+		update["$set"] = bsonData
+	}
 	if len(value) > 0 {
 		for _, data := range value {
 			bm, ok := data.(bson.M)
@@ -346,7 +349,10 @@ func (m Model) Update(data any, value ...any) error {
 	log.Debugf("MongoDB更新bsonData: %+v\n", bsonData)
 	opts := options.Update().SetUpsert(false)
 	log.Debugf("MongoDB更新Where条件: %v\n", m.WhereList)
-	update := bson.M{"$set": bsonData}
+	update := make(bson.M)
+	if len(bsonData) != 0 {
+		update["$set"] = bsonData
+	}
 	if len(value) > 0 {
 		for _, data := range value {
 			bm, ok := data.(bson.M)
@@ -365,6 +371,11 @@ func (m Model) Update(data any, value ...any) error {
 		}
 	}
 	log.Debugf("MongoDB更新条件: %+v\n", update)
+
+	if len(update) == 0 {
+		log.Error("MongoDB更新条件为空")
+		return nil
+	}
 
 	_, err = m.Tx.Client.Database(m.Tx.Database).Collection(m.GetCollection(m.Data)).UpdateMany(m.GetContext(), m.WhereList, update, opts)
 	if err != nil {
