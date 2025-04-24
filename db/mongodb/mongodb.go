@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/url"
 	"reflect"
+	"strings"
 	"time"
 
 	"github.com/lfhy/morm/conf"
@@ -145,39 +146,111 @@ type Table interface {
 }
 
 // 转换data TO bsonM
-func convertToBSONM(data any) bson.M {
+func ConvertToBSONM(data any) (bson.M, error) {
 	bsonData := bson.M{}
 	val := reflect.ValueOf(data)
-	// Check if the value is a pointer, and if so, get the underlying element
+
+	// 解引用指针直到获取实际值
 	for val.Kind() == reflect.Ptr {
+		if val.IsNil() {
+			val = reflect.New(val.Type())
+		}
 		val = val.Elem()
+	}
+
+	// 仅处理结构体类型
+	if val.Kind() != reflect.Struct {
+		return nil, fmt.Errorf("input must be a struct or pointer to struct")
 	}
 
 	typ := val.Type()
 
 	for i := 0; i < val.NumField(); i++ {
 		field := val.Field(i)
-		fieldName := typ.Field(i).Tag.Get("bson")
-		// Skip fields with zero values
-		if !fieldIsZero(field) {
-			if fieldName == "_id" {
-				if _, ok := field.Interface().(primitive.ObjectID); !ok {
-					oid2, err := primitive.ObjectIDFromHex(fmt.Sprint(field.Interface()))
-					if err != nil {
-						bsonData[fieldName] = oid2
-						continue
-					}
-				}
-			}
-			bsonData[fieldName] = field.Interface()
+		structField := typ.Field(i)
+
+		// 解析 bson 标签（处理 `bson:"fieldName,omitempty"` 格式）
+		tag, ok := structField.Tag.Lookup("bson")
+		if !ok {
+			continue
 		}
+		parts := strings.Split(tag, ",")
+		fieldName := parts[0]
+		if fieldName == "" {
+			fieldName = strings.ToLower(structField.Name) // 默认字段名
+		}
+
+		// 是否跳过零值（根据 omitempty 标志）
+		omitempty := false
+		for _, part := range parts[1:] {
+			if part == "omitempty" {
+				omitempty = true
+				break
+			}
+		}
+
+		// 检查零值并跳过（若需要）
+		if omitempty && isZero(field) {
+			continue
+		}
+
+		// 处理 _id 字段的特殊逻辑
+		if fieldName == "_id" || strings.ToLower(fieldName) == "id" {
+			if err := handleObjectID(field, bsonData); err != nil {
+				return nil, err
+			}
+			continue
+		}
+
+		// 处理指针问题
+		if field.Kind() == reflect.Ptr {
+			if field.IsNil() {
+				field = reflect.New(field.Type())
+			}
+			field = field.Elem()
+		}
+
+		// 处理嵌套结构体或指针（递归转换）
+		if field.Kind() == reflect.Struct {
+			nestedData, err := ConvertToBSONM(field.Interface())
+			if err != nil {
+				return nil, err
+			}
+			bsonData[fieldName] = nestedData
+			continue
+		}
+
+		// 常规字段赋值
+		bsonData[fieldName] = field.Interface()
 	}
-	return bsonData
+
+	return bsonData, nil
 }
 
-func fieldIsZero(field reflect.Value) bool {
-	zeroValue := reflect.Zero(field.Type())
-	return reflect.DeepEqual(field.Interface(), zeroValue.Interface())
+// 辅助函数：处理 ObjectID 转换
+func handleObjectID(field reflect.Value, bsonData bson.M) error {
+	if objID, ok := field.Interface().(primitive.ObjectID); ok {
+		bsonData["_id"] = objID
+		return nil
+	}
+
+	strID := fmt.Sprint(field.Interface())
+	if oid, err := primitive.ObjectIDFromHex(strID); err == nil {
+		bsonData["_id"] = oid
+		return nil
+	}
+
+	return fmt.Errorf("invalid ObjectID format for _id field: %v", strID)
+}
+
+// 辅助函数：判断零值
+func isZero(v reflect.Value) bool {
+	switch v.Kind() {
+	case reflect.Ptr, reflect.Interface:
+		return v.IsNil()
+	default:
+		return reflect.DeepEqual(v.Interface(), reflect.Zero(v.Type()).Interface())
+	}
 }
 
 func (m Model) Create(data any) (id string, err error) {
@@ -185,7 +258,10 @@ func (m Model) Create(data any) (id string, err error) {
 	if data != nil {
 		m.Data = data
 	}
-	bsonData := convertToBSONM(m.Data)
+	bsonData, err := ConvertToBSONM(m.Data)
+	if err != nil {
+		return "", err
+	}
 	log.Debugf("创建MongoDB数据: %+v\n", bsonData)
 	result, err := m.Tx.Client.Database(m.Tx.Database).Collection(m.GetCollection(m.Data)).InsertOne(m.GetContext(), bsonData)
 	if err != nil {
@@ -204,8 +280,10 @@ func (m Model) Save(data any, value ...any) (id string, err error) {
 	if data != nil {
 		m.Data = data
 	}
-	bsonData := convertToBSONM(data)
-
+	bsonData, err := ConvertToBSONM(data)
+	if err != nil {
+		return "", err
+	}
 	log.Debugf("MongoDB保存Where条件: %+v\n", m.WhereList)
 	update := bson.M{"$set": bsonData}
 	if len(value) > 0 {
@@ -264,7 +342,10 @@ func (m Model) Update(data any, value ...any) error {
 	if data != nil {
 		m.Data = data
 	}
-	bsonData := convertToBSONM(data)
+	bsonData, err := ConvertToBSONM(data)
+	if err != nil {
+		return err
+	}
 	opts := options.Update().SetUpsert(false)
 	log.Debugf("MongoDB更新Where条件: %v\n", m.WhereList)
 	delete(bsonData, "_id")
@@ -289,8 +370,7 @@ func (m Model) Update(data any, value ...any) error {
 	}
 	log.Debugf("MongoDB保存条件: %+v\n", update)
 
-	_, err := m.Tx.Client.Database(m.Tx.Database).Collection(m.GetCollection(m.Data)).UpdateMany(m.GetContext(), m.WhereList, update, opts)
-
+	_, err = m.Tx.Client.Database(m.Tx.Database).Collection(m.GetCollection(m.Data)).UpdateMany(m.GetContext(), m.WhereList, update, opts)
 	if err != nil {
 		log.Error(err)
 	}
