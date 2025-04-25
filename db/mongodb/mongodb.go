@@ -147,7 +147,17 @@ type Table interface {
 
 // 转换data TO bsonM
 func ConvertToBSONM(data any) (bson.M, error) {
+	bm, ok := data.(bson.M)
+	if ok {
+		return bm, nil
+	}
 	bsonData := bson.M{}
+	bd, ok := data.(bson.D)
+	if ok {
+		d, _ := bson.Marshal(bd)
+		bson.Unmarshal(d, &bsonData)
+		return bsonData, nil
+	}
 	val := reflect.ValueOf(data)
 
 	// 解引用指针直到获取实际值
