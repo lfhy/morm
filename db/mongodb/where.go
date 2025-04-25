@@ -327,18 +327,54 @@ func (m Model) makeOneQuary() options.FindOneOptions {
 }
 
 func setIDField(dataStruct any, value string) {
+	// 尝试断言为 map[string]interface{}
+	if m, ok := dataStruct.(map[string]interface{}); ok {
+		handleMap(m, value)
+		return
+	}
+
+	// 处理结构体类型（保留原有反射逻辑）
 	val := reflect.ValueOf(dataStruct)
 	for val.Kind() == reflect.Ptr {
-		if val.IsNil() {
-			val = reflect.New(val.Type())
-		}
 		val = val.Elem()
 	}
-	idField := val.FieldByName("ID")
-	if idField.IsValid() && idField.CanSet() {
-		// 判断是否是string类型
-		if idField.Type() == reflect.TypeOf(value) {
-			idField.Set(reflect.ValueOf(value))
+	if val.Kind() == reflect.Struct {
+		handleStruct(val, value)
+	}
+}
+
+func handleMap(m map[string]interface{}, value string) {
+	// 尝试设置 id 或 _id 键
+	for _, key := range []string{"id", "_id"} {
+		if _, ok := m[key]; ok {
+			// 直接赋值（假设值类型兼容）
+			m[key] = value
+			break
+		}
+	}
+}
+
+// 处理 struct 类型
+func handleStruct(val reflect.Value, value string) {
+	typ := val.Type()
+	for i := 0; i < typ.NumField(); i++ {
+		field := typ.Field(i)
+		// 解析 bson 标签
+		bsonTag := field.Tag.Get("bson")
+		if bsonTag == "" {
+			continue
+		}
+		// 分割标签（可能包含逗号分隔的选项）
+		tagParts := strings.Split(bsonTag, ",")
+		for _, part := range tagParts {
+			if part == "id" || part == "_id" {
+				fieldVal := val.Field(i)
+				// 检查字段是否可设置且类型匹配
+				if fieldVal.CanSet() && fieldVal.Kind() == reflect.String {
+					fieldVal.SetString(value)
+				}
+				return // 找到即停止
+			}
 		}
 	}
 }
