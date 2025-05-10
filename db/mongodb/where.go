@@ -124,13 +124,13 @@ func (m Model) Offset(offset int) orm.ORMModel {
 func (m Model) Asc(condition any) orm.ORMModel {
 	key, ok := condition.(string)
 	if ok {
-		data, ok := m.OpList.Load("asc")
+		data, ok := m.OpList.Load("sort")
 		if !ok {
-			m.OpList.Store("asc", bson.D{{Key: key, Value: 1}})
+			m.OpList.Store("sort", bson.D{{Key: key, Value: 1}})
 		} else {
 			sort := data.(bson.D)
 			sort = append(sort, bson.E{Key: key, Value: 1})
-			m.OpList.Store("asc", sort)
+			m.OpList.Store("sort", sort)
 		}
 		return m
 	}
@@ -141,13 +141,13 @@ func (m Model) Asc(condition any) orm.ORMModel {
 func (m Model) Desc(condition any) orm.ORMModel {
 	key, ok := condition.(string)
 	if ok {
-		data, ok := m.OpList.Load("desc")
+		data, ok := m.OpList.Load("sort")
 		if !ok {
-			m.OpList.Store("desc", bson.D{{Key: key, Value: -1}})
+			m.OpList.Store("sort", bson.D{{Key: key, Value: -1}})
 		} else {
 			sort := data.(bson.D)
 			sort = append(sort, bson.E{Key: key, Value: -1})
-			m.OpList.Store("desc", sort)
+			m.OpList.Store("sort", sort)
 		}
 		return m
 	}
@@ -208,22 +208,22 @@ func (m Model) whereMode(condition any, mode int) orm.ORMModel {
 				case WhereOr:
 					m.WhereList[v] = bson.M{"$or": t.Field(i).Interface()}
 				case OrderAsc:
-					data, ok := m.OpList.Load("asc")
+					data, ok := m.OpList.Load("sort")
 					if !ok {
-						m.OpList.Store("asc", bson.D{{Key: v, Value: 1}})
+						m.OpList.Store("sort", bson.D{{Key: v, Value: 1}})
 					} else {
 						sort := data.(bson.D)
 						sort = append(sort, bson.E{Key: v, Value: 1})
 						m.OpList.Store("asc", sort)
 					}
 				case OrderDesc:
-					data, ok := m.OpList.Load("desc")
+					data, ok := m.OpList.Load("sort")
 					if !ok {
-						m.OpList.Store("desc", bson.D{{Key: v, Value: -1}})
+						m.OpList.Store("sort", bson.D{{Key: v, Value: -1}})
 					} else {
 						sort := data.(bson.D)
 						sort = append(sort, bson.E{Key: v, Value: -1})
-						m.OpList.Store("desc", sort)
+						m.OpList.Store("sort", sort)
 					}
 				}
 
@@ -282,19 +282,15 @@ func (m Model) makeAllQuary() options.FindOptions {
 	opts := options.Find()
 	if m.OpList != nil {
 		m.OpList.Range(func(key, value any) bool {
-			if strings.HasPrefix(key.(string), "limit") {
+			if strings.Contains(key.(string), "limit") {
 				opts = opts.SetLimit(value.(int64))
 				return true
 			}
-			if strings.HasPrefix(key.(string), "offset") {
+			if strings.Contains(key.(string), "offset") {
 				opts = opts.SetSkip(value.(int64))
 				return true
 			}
-			if strings.HasPrefix(key.(string), "asc") {
-				opts = opts.SetSort(value)
-				return true
-			}
-			if strings.HasPrefix(key.(string), "desc") {
+			if strings.Contains(key.(string), "sort") {
 				opts = opts.SetSort(value)
 				return true
 			}
@@ -308,15 +304,11 @@ func (m Model) makeOneQuary() options.FindOneOptions {
 	opts := options.FindOne()
 	if m.OpList != nil {
 		m.OpList.Range(func(key, value any) bool {
-			if strings.HasPrefix(key.(string), "offset") {
+			if strings.Contains(key.(string), "offset") {
 				opts = opts.SetSkip(value.(int64))
 				return true
 			}
-			if strings.HasPrefix(key.(string), "asc") {
-				opts = opts.SetSort(value)
-				return true
-			}
-			if strings.HasPrefix(key.(string), "desc") {
+			if strings.Contains(key.(string), "sort") {
 				opts = opts.SetSort(value)
 				return true
 			}
