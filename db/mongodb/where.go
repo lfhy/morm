@@ -126,10 +126,10 @@ func (m Model) Asc(condition any) orm.ORMModel {
 	if ok {
 		data, ok := m.OpList.Load("asc")
 		if !ok {
-			m.OpList.Store("asc", bson.D{{Key: key, Value: -1}})
+			m.OpList.Store("asc", bson.D{{Key: key, Value: 1}})
 		} else {
 			sort := data.(bson.D)
-			sort = append(sort, bson.E{Key: key, Value: -1})
+			sort = append(sort, bson.E{Key: key, Value: 1})
 			m.OpList.Store("asc", sort)
 		}
 		return m
