@@ -50,6 +50,10 @@ max_idle_conns = '10'
 max_open_conns = '100'
 ```
 
+配置文件读取使用了```viper```，所以支持多种配置文件格式，如```json```、```yaml```、```toml```、```ini```等，详情请参考[viper](https://github.com/spf13/viper)文档。
+
+也可以直接传入viper实例进行读取。
+
 # 使用案例
 ```golang
 package main
@@ -83,15 +87,17 @@ func main() {
 	}
 	// 使用自定义日志:db.SetLogger
 	// 数据库初始化
-	orm, err := morm.Init()
-	if err != nil {
-		fmt.Printf("数据库初始化失败:%v\n", err)
-		panic(err)
-	}
+	// 也可以自己处理错误
+	// orm, err := morm.InitWithError(configPath)
+	// 也可以直接传入配置文件
+	// orm := morm.Init(configPath)
+	// 如果已经用viper解析了，那也可以使用对应的配置实例 morm.UseViperConfig(viperConfig)
+	orm := morm.Init()
 
 	// 创建查询
 	var db DBSturct
 	db.ID = "123"
+
 	err = orm.Model(&db).Find().One(&db)
 	if err != nil {
 		fmt.Printf("查询失败:%v\n", err)
@@ -99,6 +105,7 @@ func main() {
 	}
 	fmt.Printf("查询结果:%+v\n", db)
 }
+
 ```
 
 # TODO

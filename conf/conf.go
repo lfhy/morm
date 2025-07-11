@@ -9,8 +9,26 @@ import (
 
 var config *viper.Viper
 
+// 获取当前配置实例
+func GetConfig() *viper.Viper {
+	return config
+}
+
+// 设置新的viper配置实例
+func SetViperConfig(conf *viper.Viper) {
+	config = conf
+}
+
+// 检查配置是否已初始化
+func IsInited() bool {
+	return config != nil
+}
+
 // 初始化配置文件
 func InitConfig(conf string) error {
+	if IsInited() {
+		return nil
+	}
 	config = viper.New()
 	config.SetConfigType("toml")
 	config.SetConfigFile(conf)
