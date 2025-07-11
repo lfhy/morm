@@ -32,3 +32,17 @@ max_open_conns = '100'
 user = 'orm'
 # mysql认证密码
 password = 'password'
+
+[sqlite]
+# 数据库路径
+# 这里传入的是gorm的DSN 支持内存模式等其他特性 如:"file:testdatabase?mode=memory&cache=shared"
+# 也可以传入数据库的存储路径
+file_path = './test.db'
+# 下面这三个不知道有没有用
+
+# 最大空闲连接数
+max_idle_conns = '10'
+# 最大连接数
+max_open_conns = '100'
+# 连接最大生命时间
+conn_max_lifetime = '1h'
