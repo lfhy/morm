@@ -1,8 +1,8 @@
 package log
 
 import (
-	"fmt"
-	glog "log"
+	"io"
+	"log"
 	"os"
 	"path/filepath"
 	"sync"
@@ -22,14 +22,21 @@ func InitDBLoger() logger.Interface {
 		return *logout
 	}
 	LogName := conf.ReadConfigToString("db", "log")
-	os.MkdirAll(filepath.Dir(LogName), 0755)
-	f, err := os.OpenFile(LogName, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
-	if err != nil && err != os.ErrExist {
-		fmt.Println("数据库", "日志初始化失败")
-		f = os.Stdout
+	var logWrite io.Writer
+	if LogName == "" {
+		logWrite = os.Stdout
+	} else {
+		os.MkdirAll(filepath.Dir(LogName), 0755)
+		f, err := os.OpenFile(LogName, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+		if err != nil && err != os.ErrExist {
+			log.Println("数据库", "日志初始化失败")
+			logWrite = os.Stdout
+		} else {
+			logWrite = f
+		}
 	}
 
-	log := logger.New(glog.New(f, "\r\n", glog.LstdFlags), logger.Config{
+	log := logger.New(log.New(logWrite, "\r\n", log.LstdFlags), logger.Config{
 		SlowThreshold:             200 * time.Millisecond,                                  // 慢 SQL 阈值
 		LogLevel:                  logger.LogLevel(conf.ReadConfigToInt("db", "loglevel")), // 日志级别
 		IgnoreRecordNotFoundError: false,                                                   // 忽略ErrRecordNotFound（记录未找到）错误
