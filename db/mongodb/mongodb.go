@@ -147,6 +147,10 @@ type Table interface {
 
 // 转换data TO bsonM
 func ConvertToBSONM(data any) (bson.M, error) {
+	if data == nil {
+		return bson.M{}, nil
+	}
+
 	bm, ok := data.(bson.M)
 	if ok {
 		return bm, nil
