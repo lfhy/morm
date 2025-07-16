@@ -164,6 +164,11 @@ func ConvertToBSONM(data any) (bson.M, error) {
 	}
 	val := reflect.ValueOf(data)
 
+	// 解引用接口
+	if val.Kind() == reflect.Interface {
+		val = val.Elem()
+	}
+
 	// 解引用指针直到获取实际值
 	for val.Kind() == reflect.Ptr {
 		if val.IsNil() {
