@@ -1,4 +1,4 @@
-package orm
+package types
 
 import (
 	"context"
@@ -55,7 +55,9 @@ type ORMModel interface {
 	SetContext(ctx context.Context) ORMModel
 
 	// 删除
-	Delete(data any) error
+	// 传入Delete(&User{ID:123}) 就是删除ID为123的数据
+	// 也可以直接Where(&User{ID:123}).Delete()
+	Delete(data ...any) error
 
 	// 查询数据
 	// 会根据限制条件生成查询函数

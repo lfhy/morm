@@ -5,7 +5,7 @@ import (
 )
 
 type Quary struct {
-	m      Model
+	m      *Model
 	OpList *sync.Map
 }
 

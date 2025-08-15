@@ -6,8 +6,8 @@ import (
 	"github.com/glebarez/sqlite"
 	"github.com/lfhy/morm/conf"
 	"github.com/lfhy/morm/db/sqlorm"
-	orm "github.com/lfhy/morm/interface"
 	"github.com/lfhy/morm/log"
+	"github.com/lfhy/morm/types"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
@@ -66,7 +66,7 @@ func (c *Configuration) InitDataBase(loger logger.Interface) (*gorm.DB, error) {
 	return db, nil
 }
 
-func Init(log logger.Interface) (orm.ORM, error) {
+func Init(log logger.Interface) (types.ORM, error) {
 	c := &Configuration{
 		FilePath:        conf.ReadConfigToString("sqlite", "file_path"),
 		MaxIdleConns:    conf.ReadConfigToInt("sqlite", "max_idle_conns"),

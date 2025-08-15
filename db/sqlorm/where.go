@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"strings"
 
-	orm "github.com/lfhy/morm/interface"
+	"github.com/lfhy/morm/types"
 
 	"gorm.io/gorm"
 )
@@ -23,7 +23,7 @@ const (
 )
 
 // 限制条件
-func (m Model) Where(condition any, value ...any) orm.ORMModel {
+func (m *Model) Where(condition any, value ...any) types.ORMModel {
 	if len(value) > 0 {
 		key, ok := condition.(string)
 		if ok {
@@ -34,12 +34,12 @@ func (m Model) Where(condition any, value ...any) orm.ORMModel {
 	return m.whereMode(condition, WhereIs)
 }
 
-func (m Model) WhereIs(key string, value any) orm.ORMModel {
+func (m *Model) WhereIs(key string, value any) types.ORMModel {
 	m.OpList.Store(key, value)
 	return m
 }
 
-func (m Model) WhereNot(condition any, value ...any) orm.ORMModel {
+func (m *Model) WhereNot(condition any, value ...any) types.ORMModel {
 	if len(value) > 0 {
 		key, ok := condition.(string)
 		if ok {
@@ -50,7 +50,7 @@ func (m Model) WhereNot(condition any, value ...any) orm.ORMModel {
 	return m.whereMode(condition, WhereNot)
 }
 
-func (m Model) WhereGt(condition any, value ...any) orm.ORMModel {
+func (m *Model) WhereGt(condition any, value ...any) types.ORMModel {
 	if len(value) > 0 {
 		key, ok := condition.(string)
 		if ok {
@@ -61,7 +61,7 @@ func (m Model) WhereGt(condition any, value ...any) orm.ORMModel {
 	return m.whereMode(condition, WhereGt)
 }
 
-func (m Model) WhereLt(condition any, value ...any) orm.ORMModel {
+func (m *Model) WhereLt(condition any, value ...any) types.ORMModel {
 	if len(value) > 0 {
 		key, ok := condition.(string)
 		if ok {
@@ -72,7 +72,7 @@ func (m Model) WhereLt(condition any, value ...any) orm.ORMModel {
 	return m.whereMode(condition, WhereLt)
 }
 
-func (m Model) WhereGte(condition any, value ...any) orm.ORMModel {
+func (m *Model) WhereGte(condition any, value ...any) types.ORMModel {
 	if len(value) > 0 {
 		key, ok := condition.(string)
 		if ok {
@@ -83,7 +83,7 @@ func (m Model) WhereGte(condition any, value ...any) orm.ORMModel {
 	return m.whereMode(condition, WhereGte)
 }
 
-func (m Model) WhereLte(condition any, value ...any) orm.ORMModel {
+func (m *Model) WhereLte(condition any, value ...any) types.ORMModel {
 	if len(value) > 0 {
 		key, ok := condition.(string)
 		if ok {
@@ -94,7 +94,7 @@ func (m Model) WhereLte(condition any, value ...any) orm.ORMModel {
 	return m.whereMode(condition, WhereLte)
 }
 
-func (m Model) WhereOr(condition any, value ...any) orm.ORMModel {
+func (m *Model) WhereOr(condition any, value ...any) types.ORMModel {
 	if len(value) > 0 {
 		key, ok := condition.(string)
 		if ok {
@@ -106,27 +106,27 @@ func (m Model) WhereOr(condition any, value ...any) orm.ORMModel {
 }
 
 // 限制查询的数量
-func (m Model) Limit(limit int) orm.ORMModel {
+func (m *Model) Limit(limit int) types.ORMModel {
 	m.OpList.Store("limit ", limit)
 	return m
 }
 
 // 跳过查询的数量
-func (m Model) Offset(offset int) orm.ORMModel {
+func (m *Model) Offset(offset int) types.ORMModel {
 	m.OpList.Store("offset ", offset)
 	return m
 }
 
 // 正序
-func (m Model) Asc(condition any) orm.ORMModel {
+func (m *Model) Asc(condition any) types.ORMModel {
 	return m.whereMode(condition, OrderAsc)
 }
 
 // 逆序
-func (m Model) Desc(condition any) orm.ORMModel {
+func (m *Model) Desc(condition any) types.ORMModel {
 	return m.whereMode(condition, OrderDesc)
 }
-func (m Model) whereMode(condition any, mode int) orm.ORMModel {
+func (m *Model) whereMode(condition any, mode int) types.ORMModel {
 	t := reflect.ValueOf(condition)
 	if t.Kind() == reflect.Pointer {
 		if t.IsNil() {
@@ -181,46 +181,44 @@ func (m Model) whereMode(condition any, mode int) orm.ORMModel {
 }
 
 // 自动生成查询条件
-func (m Model) makeQuary() *gorm.DB {
+func (m *Model) makeQuary() *gorm.DB {
 	quary := m.tx.getDB().Model(m.Data)
-	if m.OpList != nil {
-		m.OpList.Range(func(key, value any) bool {
-			if strings.HasPrefix(key.(string), "where ") {
-				quary = quary.Where(strings.TrimPrefix(key.(string), "where "), value)
-				return true
-			}
-			if strings.HasPrefix(key.(string), "or ") {
-				quary = quary.Or(strings.TrimPrefix(key.(string), "or "), value)
-				return true
-			}
-			if strings.HasPrefix(key.(string), "not ") {
-				quary = quary.Not(strings.TrimPrefix(key.(string), "not "), value)
-				return true
-			}
-			if strings.HasPrefix(key.(string), "limit ") {
-				quary = quary.Limit(value.(int))
-				return true
-			}
-			if strings.HasPrefix(key.(string), "offset ") {
-				quary = quary.Offset(value.(int))
-				return true
-			}
-			if strings.HasPrefix(key.(string), "asc ") {
-				quary = quary.Order(fmt.Sprintf("%s ASC", strings.TrimPrefix(key.(string), "asc ")))
-				return true
-			}
-			if strings.HasPrefix(key.(string), "desc ") {
-				quary = quary.Order(fmt.Sprintf("%s DESC", strings.TrimPrefix(key.(string), "desc ")))
-				return true
-			}
-			// fmt.Println(key, value)
+	m.OpList.Range(func(key, value any) bool {
+		if strings.HasPrefix(key.(string), "where ") {
+			quary = quary.Where(strings.TrimPrefix(key.(string), "where "), value)
 			return true
-		})
-	}
+		}
+		if strings.HasPrefix(key.(string), "or ") {
+			quary = quary.Or(strings.TrimPrefix(key.(string), "or "), value)
+			return true
+		}
+		if strings.HasPrefix(key.(string), "not ") {
+			quary = quary.Not(strings.TrimPrefix(key.(string), "not "), value)
+			return true
+		}
+		if strings.HasPrefix(key.(string), "limit ") {
+			quary = quary.Limit(value.(int))
+			return true
+		}
+		if strings.HasPrefix(key.(string), "offset ") {
+			quary = quary.Offset(value.(int))
+			return true
+		}
+		if strings.HasPrefix(key.(string), "asc ") {
+			quary = quary.Order(fmt.Sprintf("%s ASC", strings.TrimPrefix(key.(string), "asc ")))
+			return true
+		}
+		if strings.HasPrefix(key.(string), "desc ") {
+			quary = quary.Order(fmt.Sprintf("%s DESC", strings.TrimPrefix(key.(string), "desc ")))
+			return true
+		}
+		// fmt.Println(key, value)
+		return true
+	})
 	return quary
 }
 
-func (m Model) getID(condition any) (id string) {
+func (m *Model) getID(condition any) (id string) {
 	t := reflect.ValueOf(condition)
 	if t.Kind() == reflect.Pointer {
 		if t.IsNil() {

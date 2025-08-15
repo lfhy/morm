@@ -5,8 +5,8 @@ import (
 	"reflect"
 	"strings"
 
-	orm "github.com/lfhy/morm/interface"
 	"github.com/lfhy/morm/log"
+	"github.com/lfhy/morm/types"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -26,7 +26,7 @@ const (
 )
 
 // 限制条件
-func (m Model) Where(condition any, value ...any) orm.ORMModel {
+func (m *Model) Where(condition any, value ...any) types.ORMModel {
 	if len(value) > 0 {
 		key, ok := condition.(string)
 		if ok {
@@ -37,12 +37,12 @@ func (m Model) Where(condition any, value ...any) orm.ORMModel {
 	return m.whereMode(condition, WhereIs)
 }
 
-func (m Model) WhereIs(key string, value any) orm.ORMModel {
+func (m *Model) WhereIs(key string, value any) types.ORMModel {
 	m.WhereList[key] = value
 	return m
 }
 
-func (m Model) WhereNot(condition any, value ...any) orm.ORMModel {
+func (m *Model) WhereNot(condition any, value ...any) types.ORMModel {
 	if len(value) > 0 {
 		key, ok := condition.(string)
 		if ok {
@@ -53,7 +53,7 @@ func (m Model) WhereNot(condition any, value ...any) orm.ORMModel {
 	return m.whereMode(condition, WhereNot)
 }
 
-func (m Model) WhereGt(condition any, value ...any) orm.ORMModel {
+func (m *Model) WhereGt(condition any, value ...any) types.ORMModel {
 	if len(value) > 0 {
 		key, ok := condition.(string)
 		if ok {
@@ -64,7 +64,7 @@ func (m Model) WhereGt(condition any, value ...any) orm.ORMModel {
 	return m.whereMode(condition, WhereGt)
 }
 
-func (m Model) WhereLt(condition any, value ...any) orm.ORMModel {
+func (m *Model) WhereLt(condition any, value ...any) types.ORMModel {
 	if len(value) > 0 {
 		key, ok := condition.(string)
 		if ok {
@@ -75,7 +75,7 @@ func (m Model) WhereLt(condition any, value ...any) orm.ORMModel {
 	return m.whereMode(condition, WhereLt)
 }
 
-func (m Model) WhereGte(condition any, value ...any) orm.ORMModel {
+func (m *Model) WhereGte(condition any, value ...any) types.ORMModel {
 	if len(value) > 0 {
 		key, ok := condition.(string)
 		if ok {
@@ -86,7 +86,7 @@ func (m Model) WhereGte(condition any, value ...any) orm.ORMModel {
 	return m.whereMode(condition, WhereGte)
 }
 
-func (m Model) WhereLte(condition any, value ...any) orm.ORMModel {
+func (m *Model) WhereLte(condition any, value ...any) types.ORMModel {
 	if len(value) > 0 {
 		key, ok := condition.(string)
 		if ok {
@@ -97,7 +97,7 @@ func (m Model) WhereLte(condition any, value ...any) orm.ORMModel {
 	return m.whereMode(condition, WhereLte)
 }
 
-func (m Model) WhereOr(condition any, value ...any) orm.ORMModel {
+func (m *Model) WhereOr(condition any, value ...any) types.ORMModel {
 	if len(value) > 0 {
 		key, ok := condition.(string)
 		if ok {
@@ -109,19 +109,19 @@ func (m Model) WhereOr(condition any, value ...any) orm.ORMModel {
 }
 
 // 限制查询的数量
-func (m Model) Limit(limit int) orm.ORMModel {
+func (m *Model) Limit(limit int) types.ORMModel {
 	m.OpList.Store("limit", int64(limit))
 	return m
 }
 
 // 跳过查询的数量
-func (m Model) Offset(offset int) orm.ORMModel {
+func (m *Model) Offset(offset int) types.ORMModel {
 	m.OpList.Store("offset", int64(offset))
 	return m
 }
 
 // 正序
-func (m Model) Asc(condition any) orm.ORMModel {
+func (m *Model) Asc(condition any) types.ORMModel {
 	key, ok := condition.(string)
 	if ok {
 		data, ok := m.OpList.Load("sort")
@@ -138,7 +138,7 @@ func (m Model) Asc(condition any) orm.ORMModel {
 }
 
 // 逆序
-func (m Model) Desc(condition any) orm.ORMModel {
+func (m *Model) Desc(condition any) types.ORMModel {
 	key, ok := condition.(string)
 	if ok {
 		data, ok := m.OpList.Load("sort")
@@ -154,7 +154,7 @@ func (m Model) Desc(condition any) orm.ORMModel {
 	return m.whereMode(condition, OrderDesc)
 }
 
-func (m Model) whereMode(condition any, mode int) orm.ORMModel {
+func (m *Model) whereMode(condition any, mode int) types.ORMModel {
 	t := reflect.ValueOf(condition)
 	if t.Kind() == reflect.Ptr {
 		if t.IsNil() {
@@ -233,7 +233,7 @@ func (m Model) whereMode(condition any, mode int) orm.ORMModel {
 	return m
 }
 
-func (m Model) CheckOID() {
+func (m *Model) CheckOID() {
 	if m.WhereList["_id"] != nil {
 		switch m.WhereList["_id"].(type) {
 		case primitive.ObjectID, map[string]primitive.ObjectID:
@@ -278,43 +278,39 @@ func (m Model) CheckOID() {
 	}
 }
 
-func (m Model) makeAllQuary() options.FindOptions {
+func (m *Model) makeAllQuary() *options.FindOptions {
 	opts := options.Find()
-	if m.OpList != nil {
-		m.OpList.Range(func(key, value any) bool {
-			if strings.Contains(key.(string), "limit") {
-				opts = opts.SetLimit(value.(int64))
-				return true
-			}
-			if strings.Contains(key.(string), "offset") {
-				opts = opts.SetSkip(value.(int64))
-				return true
-			}
-			if strings.Contains(key.(string), "sort") {
-				opts = opts.SetSort(value)
-				return true
-			}
+	m.OpList.Range(func(key, value any) bool {
+		if strings.Contains(key.(string), "limit") {
+			opts = opts.SetLimit(value.(int64))
 			return true
-		})
-	}
-	return *opts
+		}
+		if strings.Contains(key.(string), "offset") {
+			opts = opts.SetSkip(value.(int64))
+			return true
+		}
+		if strings.Contains(key.(string), "sort") {
+			opts = opts.SetSort(value)
+			return true
+		}
+		return true
+	})
+	return opts
 }
 
-func (m Model) makeOneQuary() options.FindOneOptions {
+func (m *Model) makeOneQuary() options.FindOneOptions {
 	opts := options.FindOne()
-	if m.OpList != nil {
-		m.OpList.Range(func(key, value any) bool {
-			if strings.Contains(key.(string), "offset") {
-				opts = opts.SetSkip(value.(int64))
-				return true
-			}
-			if strings.Contains(key.(string), "sort") {
-				opts = opts.SetSort(value)
-				return true
-			}
+	m.OpList.Range(func(key, value any) bool {
+		if strings.Contains(key.(string), "offset") {
+			opts = opts.SetSkip(value.(int64))
 			return true
-		})
-	}
+		}
+		if strings.Contains(key.(string), "sort") {
+			opts = opts.SetSort(value)
+			return true
+		}
+		return true
+	})
 	return *opts
 }
 

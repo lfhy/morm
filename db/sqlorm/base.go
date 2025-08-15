@@ -4,11 +4,11 @@ import (
 	"errors"
 	"fmt"
 
-	orm "github.com/lfhy/morm/interface"
+	"github.com/lfhy/morm/types"
 )
 
 // 插入数据
-func (m Model) Create(data any) (id string, err error) {
+func (m *Model) Create(data any) (id string, err error) {
 	if data != nil {
 		m.Data = data
 	}
@@ -20,7 +20,7 @@ func (m Model) Create(data any) (id string, err error) {
 }
 
 // 更新或插入数据
-func (m Model) Save(data any, value ...any) (id string, err error) {
+func (m *Model) Save(data any, value ...any) (id string, err error) {
 	if data != nil {
 		m.Data = data
 	}
@@ -38,15 +38,15 @@ func (m Model) Save(data any, value ...any) (id string, err error) {
 }
 
 // 删除
-func (m Model) Delete(data any) error {
-	if data != nil {
-		m.Data = data
+func (m *Model) Delete(data ...any) error {
+	if len(data) > 0 && data[0] != nil {
+		m.Data = data[0]
 	}
 	return m.makeQuary().Delete(m.Data).Error
 }
 
 // 修改
-func (m Model) Update(data any, value ...any) error {
+func (m *Model) Update(data any, value ...any) error {
 	if len(value) > 0 {
 		col, ok := data.(string)
 		if ok {
@@ -60,8 +60,8 @@ func (m Model) Update(data any, value ...any) error {
 }
 
 // 查询数据
-func (m Model) Find() orm.ORMQuary {
-	return Quary{m: m, OpList: m.OpList}
+func (m *Model) Find() types.ORMQuary {
+	return &Quary{m: m, OpList: &m.OpList}
 }
 
 /*
@@ -88,8 +88,8 @@ func (m Model) Find() orm.ORMQuary {
 err := model.BulkWrite(operations, true)
 **
 */
-func (m Model) BulkWrite(datas any, order bool) error {
-	operations, ok := datas.([]orm.BulkWriteOperation)
+func (m *Model) BulkWrite(datas any, order bool) error {
+	operations, ok := datas.([]types.BulkWriteOperation)
 	if !ok {
 		return errors.New("datas must be []orm.BulkWriteOperation")
 	}

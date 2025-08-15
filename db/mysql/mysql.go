@@ -9,7 +9,7 @@ import (
 	"github.com/lfhy/morm/conf"
 	"github.com/lfhy/morm/db/sqlorm"
 
-	orm "github.com/lfhy/morm/interface"
+	"github.com/lfhy/morm/types"
 
 	gmysql "gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -111,7 +111,7 @@ func (c *Configuration) InitDataBase(loger logger.Interface) (*gorm.DB, error) {
 	return db, nil
 }
 
-func Init(log logger.Interface) (orm.ORM, error) {
+func Init(log logger.Interface) (types.ORM, error) {
 	c := &Configuration{
 		Host:            conf.ReadConfigToString("mysql", "host"),
 		Port:            conf.ReadConfigToString("mysql", "port"),

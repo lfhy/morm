@@ -11,11 +11,11 @@ import (
 )
 
 type Quary struct {
-	m     Model
+	m     *Model
 	Where bson.M
 }
 
-func (q Quary) One(data any) error {
+func (q *Quary) One(data any) error {
 	opts := q.m.makeOneQuary()
 	log.Debugf("查询集合 %v ,Mongo查询条件: %+v %+v", q.m.GetCollection(q.m.Data), q.m.WhereList, opts)
 	result := q.m.Tx.Client.Database(q.m.Tx.Database).Collection(q.m.GetCollection(q.m.Data)).FindOne(q.m.GetContext(), q.m.WhereList, &opts)
@@ -30,11 +30,11 @@ func (q Quary) One(data any) error {
 }
 
 // 查询全部
-func (q Quary) All(data any) error {
+func (q *Quary) All(data any) error {
 	opts := q.m.makeAllQuary()
 	log.Debugf("查询集合 %v Mongo查询条件: %v %v", q.m.GetCollection(q.m.Data), q.m.WhereList, opts)
 	log.Debugf("Mongo查询限制: %+v\n", opts)
-	result, err := q.m.Tx.Client.Database(q.m.Tx.Database).Collection(q.m.GetCollection(q.m.Data)).Find(q.m.GetContext(), q.m.WhereList, &opts)
+	result, err := q.m.Tx.Client.Database(q.m.Tx.Database).Collection(q.m.GetCollection(q.m.Data)).Find(q.m.GetContext(), q.m.WhereList, opts)
 
 	// log.Debugf("Mongo查询结果: %+v\n", result)
 	if err != nil {
@@ -48,7 +48,7 @@ func (q Quary) All(data any) error {
 	return err
 }
 
-func (q Quary) Count() (int64, error) {
+func (q *Quary) Count() (int64, error) {
 	return q.m.Tx.Client.Database(q.m.Tx.Database).Collection(q.m.GetCollection(q.m.Data)).CountDocuments(q.m.GetContext(), q.m.WhereList)
 }
 
@@ -57,7 +57,7 @@ type IDModel struct {
 }
 
 // 删除查询结果
-func (q Quary) Delete() error {
+func (q *Quary) Delete() error {
 	var deleteIDs []*IDModel
 	err := q.All(&deleteIDs)
 	if err != nil {

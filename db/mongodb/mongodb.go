@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/lfhy/morm/conf"
-	orm "github.com/lfhy/morm/interface"
+	"github.com/lfhy/morm/types"
 	"golang.org/x/net/proxy"
 
 	"github.com/lfhy/morm/log"
@@ -22,7 +22,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/writeconcern"
 )
 
-func Init() (orm.ORM, error) {
+func Init() (types.ORM, error) {
 	ctx := context.Background()
 	// 设置连接uri
 	opts := options.Client().ApplyURI(conf.ReadConfigToString("mongodb", "uri"))
@@ -100,7 +100,7 @@ func Init() (orm.ORM, error) {
 }
 
 // 获取集合
-func (m Model) GetCollection(dest any) string {
+func (m *Model) GetCollection(dest any) string {
 	if m.Collection != "" {
 		return m.Collection
 	}
@@ -118,7 +118,7 @@ func (m Model) GetCollection(dest any) string {
 }
 
 // 启动事务做函数调用
-func (m Model) Session(transactionFunc func(SessionContext context.Context) error) error {
+func (m *Model) Session(transactionFunc func(SessionContext context.Context) error) error {
 	// 创建会话
 	session, err := m.Tx.Client.StartSession()
 	if err != nil {
@@ -248,7 +248,7 @@ func isZero(v reflect.Value) bool {
 	}
 }
 
-func (m Model) Create(data any) (id string, err error) {
+func (m *Model) Create(data any) (id string, err error) {
 	m.CheckOID()
 	if data != nil {
 		m.Data = data
@@ -283,7 +283,7 @@ func (m Model) Create(data any) (id string, err error) {
 }
 
 // 更新或插入数据
-func (m Model) Save(data any, value ...any) (id string, err error) {
+func (m *Model) Save(data any, value ...any) (id string, err error) {
 	m.CheckOID()
 	if data != nil {
 		m.Data = data
@@ -341,10 +341,10 @@ func (m Model) Save(data any, value ...any) (id string, err error) {
 }
 
 // 删除
-func (m Model) Delete(data any) error {
+func (m *Model) Delete(data ...any) error {
 	m.CheckOID()
-	if data != nil {
-		m.Data = data
+	if len(data) > 0 && data[0] != nil {
+		m.Data = data[0]
 	}
 	_, err := m.Tx.Client.Database(m.Tx.Database).Collection(m.GetCollection(m.Data)).DeleteMany(m.GetContext(), m.WhereList)
 	if err != nil {
@@ -355,7 +355,7 @@ func (m Model) Delete(data any) error {
 }
 
 // 修改
-func (m Model) Update(data any, value ...any) error {
+func (m *Model) Update(data any, value ...any) error {
 	m.CheckOID()
 	if data != nil {
 		m.Data = data
@@ -404,12 +404,12 @@ func (m Model) Update(data any, value ...any) error {
 }
 
 // 查询数据
-func (m Model) Find() orm.ORMQuary {
+func (m *Model) Find() types.ORMQuary {
 	m.CheckOID()
-	return Quary{m: m, Where: m.WhereList}
+	return &Quary{m: m, Where: m.WhereList}
 }
 
-func (m Model) BulkWrite(datas any, order bool) error {
+func (m *Model) BulkWrite(datas any, order bool) error {
 	models, ok := datas.([]mongo.WriteModel)
 	if !ok {
 		return errors.New("datas must be []mongo.WriteModel")

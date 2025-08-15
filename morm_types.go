@@ -1,11 +1,11 @@
 package morm
 
 import (
-	orm "github.com/lfhy/morm/interface"
+	"github.com/lfhy/morm/types"
 )
 
 // 为了避免识别错误设置Bool类型为int类型
-type BoolORM = orm.BoolORM
+type BoolORM = types.BoolORM
 
 const (
 	TrueInt  BoolORM = 1
@@ -14,12 +14,12 @@ const (
 	EmptyStr = "-"
 )
 
-type ORM = orm.ORM
+type ORM = types.ORM
 
-type ORMModel = orm.ORMModel
+type ORMModel = types.ORMModel
 
-type ORMQuary = orm.ORMQuary
+type ORMQuary = types.ORMQuary
 
-type BulkWriteOperation = orm.BulkWriteOperation
+type BulkWriteOperation = types.BulkWriteOperation
 
-type MongoBulkWriteOperation = orm.MongoBulkWriteOperation
+type MongoBulkWriteOperation = types.MongoBulkWriteOperation
