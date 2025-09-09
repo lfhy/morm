@@ -53,17 +53,19 @@ func (d *DBConfig) Init() {
 	if d.LogConfig != nil {
 		d.LogConfig.Init()
 	}
-
 	// 调用各数据库配置的Init方法
-	if d.MySQLConfig != nil {
-		d.MySQLConfig.Init()
-	}
-
-	if d.MongoDBConfig != nil {
-		d.MongoDBConfig.Init()
-	}
-
-	if d.SQLiteConfig != nil {
-		d.SQLiteConfig.Init()
+	switch d.Type {
+	case "mysql":
+		if d.MySQLConfig != nil {
+			d.MySQLConfig.Init()
+		}
+	case "sqlite":
+		if d.SQLiteConfig != nil {
+			d.SQLiteConfig.Init()
+		}
+	case "mongodb":
+		if d.MongoDBConfig != nil {
+			d.MongoDBConfig.Init()
+		}
 	}
 }

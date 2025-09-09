@@ -2,6 +2,42 @@
 混合ORM(Mixed orm)，配置数据源源即可轻松访问不同类型的数据库，目前支持```mysql```、```mongodb```和```sqlite```，底层使用```gorm```和```mongo-driver```实现。
 
 配置文件使用```viper```进行解析
+
+# 通过配置结构体初始化
+
+除了使用配置文件初始化ORM外，还可以通过DBConfig结构体直接初始化ORM:
+
+```golang
+package main
+
+import (
+	"github.com/lfhy/morm"
+	"github.com/lfhy/morm/conf"
+)
+
+func main() {
+	// 通过结构体配置初始化
+	dbConfig := &conf.DBConfig{
+		Type: "sqlite",
+		LogConfig: &conf.LogConfig{
+			Log:      "./db.log",
+			LogLevel: "4",
+		},
+		SQLiteConfig: &conf.SQLiteConfig{
+			FilePath:        "./test.db",
+			ConnMaxLifetime: "1h",
+			MaxIdleConns:    "10",
+			MaxOpenConns:    "100",
+		},
+	}
+
+	// 使用配置结构体初始化ORM
+	orm := morm.InitWithDBConfig(dbConfig)
+	
+	// 后续使用ORM进行数据库操作...
+}
+```
+
 # 配置文件参考
 ```toml
 [db]
