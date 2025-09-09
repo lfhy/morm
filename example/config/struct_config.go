@@ -29,6 +29,7 @@ func main() {
 			LogLevel: "4",
 		},
 		SQLiteConfig: &conf.SQLiteConfig{
+			AutoCreateTable: true,
 			FilePath:        "./test.db",
 			ConnMaxLifetime: "1h",
 			MaxIdleConns:    "10",

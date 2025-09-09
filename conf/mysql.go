@@ -6,6 +6,8 @@ import "github.com/spf13/viper"
 type MySQLConfig struct {
 	// 日志配置
 	*LogConfig
+	// 自动创表
+	AutoCreateTable bool `mapstructure:"db.auto_create_table"`
 	// mysql连接数据库
 	Database string `mapstructure:"mysql.database"`
 	// 数据库编码
@@ -40,7 +42,7 @@ func (m *MySQLConfig) Init() {
 	if m.LogConfig != nil {
 		m.LogConfig.Init()
 	}
-
+	config.Set("db.auto_create_table", m.AutoCreateTable)
 	config.Set("mysql.database", m.Database)
 	config.Set("mysql.charset", m.Charset)
 	config.Set("mysql.conn_max_lifetime", m.ConnMaxLifetime)

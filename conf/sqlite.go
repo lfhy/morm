@@ -6,6 +6,8 @@ import "github.com/spf13/viper"
 type SQLiteConfig struct {
 	// 日志配置
 	*LogConfig
+	// 自动创表
+	AutoCreateTable bool `mapstructure:"db.auto_create_table"`
 	// 数据库路径
 	// 这里传入的是gorm的DSN 支持内存模式等其他特性 如:"file:testdatabase?mode=memory&cache=shared"
 	// 也可以传入数据库的存储路径
@@ -32,6 +34,7 @@ func (s *SQLiteConfig) Init() {
 	if s.LogConfig != nil {
 		s.LogConfig.Init()
 	}
+	config.Set("db.auto_create_table", s.AutoCreateTable)
 
 	config.Set("sqlite.file_path", s.FilePath)
 	config.Set("sqlite.max_idle_conns", s.MaxIdleConns)

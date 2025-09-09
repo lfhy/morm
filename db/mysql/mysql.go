@@ -132,7 +132,7 @@ func Init(log logger.Interface) (types.ORM, error) {
 		return nil, err
 	}
 
-	sqlorm.ORMConn = &sqlorm.DBConn{DB: conn}
+	sqlorm.ORMConn = &sqlorm.DBConn{DB: conn, AutoMigrate: conf.ReadConfigToBool("db", "auto_create_table")}
 	// 校验数据库
 	// sqlorm.ORMConn.CheckDB()
 	return sqlorm.ORMConn, nil

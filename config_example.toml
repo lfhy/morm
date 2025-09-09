@@ -2,6 +2,7 @@
 log = './db.log'    # 日志文件路径
 loglevel = '4'  # 日志等级 
 type = 'mysql' # 默认orm类型
+auto_create_table = 'true' # 是否自动创建表
 
 [mongodb]
 # mongodb连接的数据库

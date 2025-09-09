@@ -49,3 +49,8 @@ func ReadConfigToInt(title, key string) int {
 func ReadConfigToTimeDuration(title, key string) time.Duration {
 	return config.GetDuration(fmt.Sprintf("%v.%v", title, key))
 }
+
+// 读取配置文件中的bool值
+func ReadConfigToBool(title, key string) bool {
+	return config.GetBool(fmt.Sprintf("%v.%v", title, key))
+}

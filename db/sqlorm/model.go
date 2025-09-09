@@ -13,11 +13,21 @@ type Model struct {
 	Data   any
 	OpList sync.Map        // key:操作模式Mode value:操作值
 	Ctx    context.Context //上下文
+	Table  string
 }
 
 var ORMConn *DBConn
 
 func (m *DBConn) Model(data any) types.ORMModel {
+	if m.AutoMigrate {
+		if m.migrateMap == nil {
+			m.migrateMap = make(map[string]bool)
+		}
+		if _, ok := m.migrateMap[GetTableName(data)]; !ok {
+			m.migrateMap[GetTableName(data)] = true
+			m.getDB().AutoMigrate(data)
+		}
+	}
 	return &Model{Data: data, OpList: sync.Map{}, tx: m}
 }
 
