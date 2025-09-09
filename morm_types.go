@@ -1,6 +1,7 @@
 package morm
 
 import (
+	"github.com/lfhy/morm/conf"
 	"github.com/lfhy/morm/types"
 )
 
@@ -23,3 +24,11 @@ type ORMQuary = types.ORMQuary
 type BulkWriteOperation = types.BulkWriteOperation
 
 type MongoBulkWriteOperation = types.MongoBulkWriteOperation
+
+type DBConfig = conf.DBConfig
+
+type SQLiteConfig = conf.SQLiteConfig
+
+type MySQLConfig = conf.MySQLConfig
+
+type MongoDBConfig = conf.MongoDBConfig

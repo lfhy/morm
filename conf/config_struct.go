@@ -5,17 +5,34 @@ import "github.com/spf13/viper"
 // DBConfig 是数据库总配置结构体
 type DBConfig struct {
 	// 数据库类型 mysql mongodb sqlite
-	Type string `mapstructure:"type"`
-	// 日志文件路径
-	Log string `mapstructure:"log"`
-	// 日志等级
-	LogLevel string `mapstructure:"loglevel"`
+	Type string `mapstructure:"db.type"`
+	// 日志配置
+	*LogConfig
 	// MySQL配置
-	MySQLConfig *MySQLConfig `mapstructure:"mysql"`
+	*MySQLConfig
 	// MongoDB配置
-	MongoDBConfig *MongoDBConfig `mapstructure:"mongodb"`
+	*MongoDBConfig
 	// SQLite配置
-	SQLiteConfig *SQLiteConfig `mapstructure:"sqlite"`
+	*SQLiteConfig
+}
+
+type LogConfig struct {
+	// 日志文件路径
+	Log string `mapstructure:"db.log"`
+	// 日志等级
+	LogLevel string `mapstructure:"db.loglevel"`
+}
+
+func (l *LogConfig) Init() {
+	if l == nil {
+		return
+	}
+	if l.Log != "" {
+		config.Set("db.log", l.Log)
+	}
+	if l.LogLevel != "" {
+		config.Set("db.loglevel", l.LogLevel)
+	}
 }
 
 // Init 将总配置设置到config单例上，并调用各数据库配置的Init方法
@@ -30,9 +47,12 @@ func (d *DBConfig) Init() {
 	}
 
 	// 设置基本配置
-	config.Set("type", d.Type)
-	config.Set("log", d.Log)
-	config.Set("loglevel", d.LogLevel)
+	config.Set("db.type", d.Type)
+
+	// 日志初始化
+	if d.LogConfig != nil {
+		d.LogConfig.Init()
+	}
 
 	// 调用各数据库配置的Init方法
 	if d.MySQLConfig != nil {

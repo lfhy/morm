@@ -4,24 +4,26 @@ import "github.com/spf13/viper"
 
 // MySQLConfig 是MySQL数据库的配置结构体
 type MySQLConfig struct {
+	// 日志配置
+	*LogConfig
 	// mysql连接数据库
-	Database string `mapstructure:"database"`
+	Database string `mapstructure:"mysql.database"`
 	// 数据库编码
-	Charset string `mapstructure:"charset"`
+	Charset string `mapstructure:"mysql.charset"`
 	// 连接最大生命时间
-	ConnMaxLifetime string `mapstructure:"conn_max_lifetime"`
+	ConnMaxLifetime string `mapstructure:"mysql.conn_max_lifetime"`
 	// mysql连接主机
-	Host string `mapstructure:"host"`
+	Host string `mapstructure:"mysql.host"`
 	// mysql连接端口
-	Port string `mapstructure:"port"`
+	Port string `mapstructure:"mysql.port"`
 	// 最大空闲连接数
-	MaxIdleConns string `mapstructure:"max_idle_conns"`
+	MaxIdleConns string `mapstructure:"mysql.max_idle_conns"`
 	// 最大连接数
-	MaxOpenConns string `mapstructure:"max_open_conns"`
+	MaxOpenConns string `mapstructure:"mysql.max_open_conns"`
 	// mysql认证用户
-	User string `mapstructure:"user"`
+	User string `mapstructure:"mysql.user"`
 	// mysql认证密码
-	Password string `mapstructure:"password"`
+	Password string `mapstructure:"mysql.password"`
 }
 
 // Init 将MySQL配置设置到config单例上
@@ -33,6 +35,10 @@ func (m *MySQLConfig) Init() {
 	// 确保config已初始化
 	if config == nil {
 		config = viper.New()
+	}
+
+	if m.LogConfig != nil {
+		m.LogConfig.Init()
 	}
 
 	config.Set("mysql.database", m.Database)

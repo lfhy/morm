@@ -35,6 +35,9 @@ func GetConfig() *viper.Viper {
 
 // 初始化配置(单次执行)
 func initConfig() (err error) {
+	if conf.GetConfig() != nil {
+		return nil
+	}
 	if configFile == "" {
 		return fmt.Errorf("配置文件不存在")
 	}
@@ -123,4 +126,50 @@ func InitSQLiteWithError(configPath ...string) (ORM, error) {
 	}
 	initConfig()
 	return sqlite.Init(log.InitDBLoger())
+}
+
+// 使用配置结构体初始化
+func InitWithDBConfig(config *DBConfig) ORM {
+	config.Init()
+	return Init(configFile)
+}
+
+// 使用配置结构体初始化
+func InitWithDBConfigWithError(config *DBConfig) (ORM, error) {
+	config.Init()
+	return InitWithError(configFile)
+}
+
+// 使用配置结构体初始化MySQL
+func InitMySQLWithDBConfig(config *MySQLConfig) ORM {
+	config.Init()
+	return InitMySQL()
+}
+
+// 使用配置结构体初始化MySQL
+func InitMySQLWithDBConfigWithError(config *MySQLConfig) (ORM, error) {
+	config.Init()
+	return InitMySQLWithError()
+}
+
+// 使用配置结构体初始化SQLite
+func InitSQLiteWithDBConfig(config *SQLiteConfig) ORM {
+	config.Init()
+	return InitSQLite()
+}
+
+// 使用配置结构体初始化SQLite
+func InitSQLiteWithDBConfigWithError(config *SQLiteConfig) (ORM, error) {
+	config.Init()
+	return InitSQLiteWithError()
+}
+
+func InitMongoDBWithDBConfig(config *MongoDBConfig) ORM {
+	config.Init()
+	return InitMongoDB()
+}
+
+func InitMongoDBWithDBConfigWithError(config *MongoDBConfig) (ORM, error) {
+	config.Init()
+	return InitMongoDBWithError()
 }
