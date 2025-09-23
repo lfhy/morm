@@ -431,6 +431,23 @@ func (m *Model) Find() types.ORMQuary {
 	return &Quary{m: m, Where: m.WhereList}
 }
 
+func (m *Model) One(data any) error {
+	return m.Find().One(data)
+}
+
+func (m *Model) All(data any) error {
+	return m.Find().All(data)
+}
+
+func (m *Model) Count() int64 {
+	i, _ := m.Find().Count()
+	return i
+}
+
+func (m *Model) Cursor() (types.Cursor, error) {
+	return m.Find().Cursor()
+}
+
 func (m *Model) BulkWrite(datas any, order bool) error {
 	models, ok := datas.([]mongo.WriteModel)
 	if !ok {

@@ -27,6 +27,12 @@ type Session interface {
 	Rollback() error
 }
 
+type Cursor interface {
+	Next() bool
+	Decode(v any) error
+	Close() error
+}
+
 type ORMModel interface {
 	// 插入数据
 	// 返回ID和错误
@@ -54,6 +60,7 @@ type ORMModel interface {
 	BulkWrite(datas any, order bool) error
 
 	// 事务
+	// 事务中要使用sessionModel 进行操作 返回error不为 nil 时则会进行回滚
 	Session(transactionFunc func(sessionModel Session) error) error
 
 	// 上下文
@@ -136,10 +143,24 @@ type ORMModel interface {
 
 	// 分页
 	Page(page, limit int) ORMModel
+
+	// 查询匹配到的一条数据
+	One(data any) error
+
+	// 查询全部数据
+	All(data any) error
+
+	// 返回查询个数
+	Count() int64
+
+	// 游标
+	// 在查询大量数据时可以减少内存占用
+	// 使用时需要及时使用Close 避免内存泄漏
+	Cursor() (Cursor, error)
 }
 
 type ORMQuary interface {
-	// 最后查询一条数据
+	// 查询匹配到的一条数据
 	One(data any) error
 	// 查询全部数据
 	All(data any) error
@@ -147,6 +168,8 @@ type ORMQuary interface {
 	Count() (int64, error)
 	// 删除查询结果
 	Delete() error
+	// 游标
+	Cursor() (Cursor, error)
 }
 
 // 分页

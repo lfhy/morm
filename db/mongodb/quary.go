@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/lfhy/morm/log"
+	"github.com/lfhy/morm/types"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -72,4 +73,33 @@ func (q *Quary) Delete() error {
 	bulkWriteOpts := options.BulkWrite().SetOrdered(false) // 设置为无序以提高性能
 	_, err = q.m.Tx.Client.Database(q.m.Tx.Database).Collection(q.m.GetCollection(q.m.Data)).BulkWrite(q.m.GetContext(), models, bulkWriteOpts)
 	return err
+}
+
+// 游标
+func (q *Quary) Cursor() (types.Cursor, error) {
+	opts := q.m.makeAllQuary()
+	log.Debugf("查询集合 %v Mongo查询条件: %v %v", q.m.GetCollection(q.m.Data), q.m.WhereList, opts)
+	log.Debugf("Mongo查询限制: %+v\n", opts)
+	result, err := q.m.Tx.Client.Database(q.m.Tx.Database).Collection(q.m.GetCollection(q.m.Data)).Find(q.m.GetContext(), q.m.WhereList, opts)
+	if err != nil {
+		log.Errorf("Mongo查出错: %v\n", err)
+		return nil, err
+	}
+	return &Cursor{
+		ctx:    q.m.GetContext(),
+		Cursor: result,
+	}, err
+}
+
+type Cursor struct {
+	ctx context.Context
+	*mongo.Cursor
+}
+
+func (c *Cursor) Next() bool {
+	return c.Cursor.Next(c.ctx)
+}
+
+func (c *Cursor) Close() error {
+	return c.Cursor.Close(c.ctx)
 }

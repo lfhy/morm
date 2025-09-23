@@ -64,6 +64,24 @@ func (m *Model) Find() types.ORMQuary {
 	return &Quary{m: m, OpList: &m.OpList}
 }
 
+func (q *Model) One(data any) error {
+	return q.Find().One(data)
+}
+
+func (q *Model) All(data any) error {
+	return q.Find().All(data)
+}
+
+func (q *Model) Count() int64 {
+	i, _ := q.Find().Count()
+	return i
+}
+
+func (q *Model) Cursor() (types.Cursor, error) {
+	return q.Find().Cursor()
+
+}
+
 /*
 **
 
