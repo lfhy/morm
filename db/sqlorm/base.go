@@ -12,7 +12,7 @@ func (m *Model) Create(data any) (id string, err error) {
 	if data != nil {
 		m.Data = data
 	}
-	err = m.tx.getDB().Create(m.Data).Scan(m.Data).Error
+	err = m.getDB().Create(m.Data).Scan(m.Data).Error
 	if err == nil {
 		id = m.getID(m.Data)
 	}
@@ -98,7 +98,7 @@ func (m *Model) BulkWrite(datas any, order bool) error {
 		return nil
 	}
 
-	tx := m.tx.getDB().Begin()
+	tx := m.getDB().Begin()
 	if tx.Error != nil {
 		return tx.Error
 	}

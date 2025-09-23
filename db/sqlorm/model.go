@@ -9,11 +9,19 @@ import (
 )
 
 type Model struct {
-	tx     *DBConn
-	Data   any
-	OpList sync.Map        // key:操作模式Mode value:操作值
-	Ctx    context.Context //上下文
-	Table  string
+	tx           *DBConn
+	translatorDB *gorm.DB
+	Data         any
+	OpList       sync.Map        // key:操作模式Mode value:操作值
+	Ctx          context.Context //上下文
+	Table        string
+}
+
+func (m *Model) getDB() *gorm.DB {
+	if m.translatorDB != nil {
+		return m.translatorDB
+	}
+	return m.tx.getDB()
 }
 
 var ORMConn *DBConn
@@ -38,10 +46,21 @@ func (m *Model) Page(page, limit int) types.ORMModel {
 	return m.Offset((page - 1) * limit).Limit(limit)
 }
 
-func (m *Model) Session(transactionFunc func(sessionContext context.Context) error) error {
+func (m *Model) Session(transactionFunc func(types.Session) error) error {
 	return m.tx.Transaction(func(tx *gorm.DB) error {
-		return transactionFunc(m.GetContext())
+		if m.translatorDB == nil {
+			m.translatorDB = tx
+		}
+		return transactionFunc(m)
 	})
+}
+
+func (s *Model) Commit() error {
+	return s.getDB().Commit().Error
+}
+
+func (s *Model) Rollback() error {
+	return s.getDB().Rollback().Error
 }
 
 func (m *Model) GetContext() context.Context {

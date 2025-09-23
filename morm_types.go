@@ -32,3 +32,5 @@ type SQLiteConfig = conf.SQLiteConfig
 type MySQLConfig = conf.MySQLConfig
 
 type MongoDBConfig = conf.MongoDBConfig
+
+type Session = types.Session

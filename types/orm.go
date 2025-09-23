@@ -21,6 +21,12 @@ type ORM interface {
 	Model(data any) ORMModel
 }
 
+type Session interface {
+	ORMModel
+	Commit() error
+	Rollback() error
+}
+
 type ORMModel interface {
 	// 插入数据
 	// 返回ID和错误
@@ -48,7 +54,7 @@ type ORMModel interface {
 	BulkWrite(datas any, order bool) error
 
 	// 事务
-	Session(transactionFunc func(sessionContext context.Context) error) error
+	Session(transactionFunc func(sessionModel Session) error) error
 
 	// 上下文
 	GetContext() context.Context

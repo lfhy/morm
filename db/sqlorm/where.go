@@ -170,8 +170,31 @@ func (m *Model) whereMode(condition any, mode int) types.ORMModel {
 						case WhereLte:
 							m.OpList.Store(fmt.Sprintf("where %s <= ?", strings.TrimPrefix(v2, "column:")), t.Field(i).Interface())
 						}
-
 						continue l1
+					} else if !strings.Contains(v2, ":") {
+						// 直接输入字段信息的情况
+						switch mode {
+						case WhereIs:
+							m.OpList.Store(fmt.Sprintf("where %s = ?", v2), t.Field(i).Interface())
+						case WhereNot:
+							m.OpList.Store(fmt.Sprintf("not %s = ?", v2), t.Field(i).Interface())
+						case WhereGt:
+							m.OpList.Store(fmt.Sprintf("where %s > ?", v2), t.Field(i).Interface())
+						case WhereLt:
+							m.OpList.Store(fmt.Sprintf("where %s < ?", v2), t.Field(i).Interface())
+						case WhereOr:
+							m.OpList.Store(fmt.Sprintf("or %s = ?", v2), t.Field(i).Interface())
+						case OrderAsc:
+							m.OpList.Store(fmt.Sprintf("asc %s", v2), "")
+						case OrderDesc:
+							m.OpList.Store(fmt.Sprintf("desc %s", v2), "")
+						case WhereGte:
+							m.OpList.Store(fmt.Sprintf("where %s >= ?", v2), t.Field(i).Interface())
+						case WhereLte:
+							m.OpList.Store(fmt.Sprintf("where %s <= ?", v2), t.Field(i).Interface())
+						}
+						continue l1
+
 					}
 				}
 			}
@@ -182,7 +205,7 @@ func (m *Model) whereMode(condition any, mode int) types.ORMModel {
 
 // 自动生成查询条件
 func (m *Model) makeQuary() *gorm.DB {
-	quary := m.tx.getDB().Model(m.Data)
+	quary := m.getDB().Model(m.Data)
 	m.OpList.Range(func(key, value any) bool {
 		if strings.HasPrefix(key.(string), "where ") {
 			quary = quary.Where(strings.TrimPrefix(key.(string), "where "), value)

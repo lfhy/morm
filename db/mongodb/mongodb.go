@@ -118,7 +118,7 @@ func (m *Model) GetCollection(dest any) string {
 }
 
 // 启动事务做函数调用
-func (m *Model) Session(transactionFunc func(SessionContext context.Context) error) error {
+func (m *Model) Session(transactionFunc func(session types.Session) error) error {
 	// 创建会话
 	session, err := m.Tx.Client.StartSession()
 	if err != nil {
@@ -128,8 +128,10 @@ func (m *Model) Session(transactionFunc func(SessionContext context.Context) err
 	sctx := m.GetContext()
 	defer session.EndSession(sctx)
 
+	sessionModel := &SessionModel{session: session, Model: m}
+
 	adaptedFunc := func(ctx mongo.SessionContext) (any, error) {
-		return nil, transactionFunc(ctx)
+		return nil, transactionFunc(sessionModel)
 	}
 
 	_, err = session.WithTransaction(sctx, adaptedFunc)
@@ -139,6 +141,19 @@ func (m *Model) Session(transactionFunc func(SessionContext context.Context) err
 	}
 	session.CommitTransaction(sctx)
 	return nil
+}
+
+type SessionModel struct {
+	session mongo.Session
+	*Model
+}
+
+func (m *SessionModel) Commit() error {
+	return m.session.CommitTransaction(m.GetContext())
+}
+
+func (m *SessionModel) Rollback() error {
+	return m.session.AbortTransaction(m.GetContext())
 }
 
 type Table interface {
