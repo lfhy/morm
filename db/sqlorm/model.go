@@ -2,6 +2,8 @@ package sqlorm
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"sync"
 
 	"github.com/lfhy/morm/types"
@@ -9,12 +11,13 @@ import (
 )
 
 type Model struct {
-	tx           *DBConn
-	translatorDB *gorm.DB
-	Data         any
-	OpList       sync.Map        // key:操作模式Mode value:操作值
-	Ctx          context.Context //上下文
-	Table        string
+	tx                    *DBConn
+	translatorDB          *gorm.DB
+	userControlTranslator bool
+	Data                  any
+	OpList                sync.Map        // key:操作模式Mode value:操作值
+	Ctx                   context.Context //上下文
+	Table                 string
 }
 
 func (m *Model) getDB() *gorm.DB {
@@ -47,19 +50,25 @@ func (m *Model) Page(page, limit int) types.ORMModel {
 }
 
 func (m *Model) Session(transactionFunc func(types.Session) error) error {
-	return m.tx.Transaction(func(tx *gorm.DB) error {
+	err := m.tx.Transaction(func(tx *gorm.DB) error {
 		if m.translatorDB == nil {
 			m.translatorDB = tx
 		}
 		return transactionFunc(m)
 	})
+	if err != nil && m.userControlTranslator && errors.Is(err, sql.ErrTxDone) {
+		return nil
+	}
+	return err
 }
 
 func (s *Model) Commit() error {
+	s.userControlTranslator = true
 	return s.getDB().Commit().Error
 }
 
 func (s *Model) Rollback() error {
+	s.userControlTranslator = true
 	return s.getDB().Rollback().Error
 }
 

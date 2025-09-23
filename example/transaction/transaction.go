@@ -47,26 +47,29 @@ func main() {
 	fmt.Printf("原始数据:%v\n", userold)
 
 	// 测试事务回滚
-	orm.Model(&User{}).Session(func(sessionModel morm.Session) error {
+	err := orm.Model(&User{}).Session(func(sessionModel morm.Session) error {
 		sessionModel.Where(&User{Name: "test"}).Update(&User{Age: 19})
 		var user User
 		sessionModel.Where(&User{Name: "test"}).Find().One(&user)
 		fmt.Printf("事务中的数据: %v\n", user)
 		return sessionModel.Rollback()
 	})
+	fmt.Printf("事务处理错误: %v\n", err)
 	// 回滚后查询数据
 	var user User
 	orm.Model(&User{}).Where(&User{Name: "test"}).Find().One(&user)
 	fmt.Printf("事务回滚后的数据: %v\n", user)
 
 	// 测试事务提交
-	orm.Model(&User{}).Session(func(sessionModel morm.Session) error {
+	err = orm.Model(&User{}).Session(func(sessionModel morm.Session) error {
 		sessionModel.Where(&User{Name: "test"}).Update(&User{Age: 20})
 		var user User
 		sessionModel.Where(&User{Name: "test"}).Find().One(&user)
 		fmt.Printf("事务中的数据: %v\n", user)
-		return nil
+		return sessionModel.Commit()
 	})
+
+	fmt.Printf("事务处理错误: %v\n", err)
 
 	// 提交后的数据
 	var user2 User

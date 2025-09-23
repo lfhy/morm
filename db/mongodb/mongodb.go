@@ -135,6 +135,10 @@ func (m *Model) Session(transactionFunc func(session types.Session) error) error
 	}
 
 	_, err = session.WithTransaction(sctx, adaptedFunc)
+	// 需要排除是否用户主动操作事务
+	if err == nil && sessionModel.userControlTranslator {
+		return nil
+	}
 	if err != nil {
 		session.AbortTransaction(sctx)
 		return log.Error(err)
@@ -144,15 +148,18 @@ func (m *Model) Session(transactionFunc func(session types.Session) error) error
 }
 
 type SessionModel struct {
-	session mongo.Session
+	session               mongo.Session
+	userControlTranslator bool
 	*Model
 }
 
 func (m *SessionModel) Commit() error {
+	m.userControlTranslator = true
 	return m.session.CommitTransaction(m.GetContext())
 }
 
 func (m *SessionModel) Rollback() error {
+	m.userControlTranslator = true
 	return m.session.AbortTransaction(m.GetContext())
 }
 
