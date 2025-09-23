@@ -28,6 +28,7 @@ func (m *Model) Where(condition any, value ...any) types.ORMModel {
 		key, ok := condition.(string)
 		if ok {
 			m.OpList.Store(fmt.Sprintf("where %s = ?", key), value[0])
+			m.upsertOp.Store(fmt.Sprintf("where %s = ?", key), value[0])
 			return m
 		}
 	}
@@ -152,7 +153,10 @@ func (m *Model) whereMode(condition any, mode int) types.ORMModel {
 					if strings.HasPrefix(v2, "column:") {
 						switch mode {
 						case WhereIs:
-							m.OpList.Store(fmt.Sprintf("where %s = ?", strings.TrimPrefix(v2, "column:")), t.Field(i).Interface())
+							column := strings.TrimPrefix(v2, "column:")
+							value := t.Field(i).Interface()
+							m.upsertOp.Store(column, value)
+							m.OpList.Store(fmt.Sprintf("where %s = ?", column), value)
 						case WhereNot:
 							m.OpList.Store(fmt.Sprintf("not %s = ?", strings.TrimPrefix(v2, "column:")), t.Field(i).Interface())
 						case WhereGt:
@@ -175,7 +179,10 @@ func (m *Model) whereMode(condition any, mode int) types.ORMModel {
 						// 直接输入字段信息的情况
 						switch mode {
 						case WhereIs:
-							m.OpList.Store(fmt.Sprintf("where %s = ?", v2), t.Field(i).Interface())
+							column := v2
+							value := t.Field(i).Interface()
+							m.upsertOp.Store(column, value)
+							m.OpList.Store(fmt.Sprintf("where %s = ?", column), value)
 						case WhereNot:
 							m.OpList.Store(fmt.Sprintf("not %s = ?", v2), t.Field(i).Interface())
 						case WhereGt:

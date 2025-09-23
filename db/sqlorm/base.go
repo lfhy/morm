@@ -22,17 +22,38 @@ func (m *Model) Insert(data any) (err error) {
 
 // 更新或插入数据
 func (m *Model) Save(data any, value ...any) (err error) {
-	if data != nil {
-		m.Data = data
-	}
 	q := m.makeQuary()
 	if len(value) > 0 {
 		if col, ok := data.(string); ok {
 			q.Set(col, value[0])
 		}
+	} else {
+		if data != nil {
+			m.Data = data
+		}
 	}
-	err = q.Save(m.Data).Scan(m.Data).Error
-	return
+	var i int64
+	q.Count(&i)
+	if i > 0 {
+		return m.Update(data, value...)
+	} else {
+		// 组合新数据
+		m.whereMode(data, WhereIs)
+		newData := make(map[string]any)
+		m.upsertOp.Range(func(key, value any) bool {
+			newData[key.(string)] = value
+			return true
+		})
+		table := m.Table
+		if table == "" {
+			table = GetTableName(data)
+		}
+		tx := m.getDB().Table(table).Create(newData)
+		if _, ok := data.(string); ok {
+			return tx.Error
+		}
+		return tx.Scan(data).Error
+	}
 }
 
 func (m *Model) Upsert(data any, value ...any) error {

@@ -15,7 +15,8 @@ type Model struct {
 	translatorDB          *gorm.DB
 	userControlTranslator bool
 	Data                  any
-	OpList                sync.Map        // key:操作模式Mode value:操作值
+	OpList                sync.Map // key:操作模式Mode value:操作值
+	upsertOp              sync.Map
 	Ctx                   context.Context //上下文
 	Table                 string
 }
@@ -39,7 +40,7 @@ func (m *DBConn) Model(data any) types.ORMModel {
 			m.getDB().AutoMigrate(data)
 		}
 	}
-	return &Model{Data: data, OpList: sync.Map{}, tx: m}
+	return &Model{Data: data, OpList: sync.Map{}, tx: m, upsertOp: sync.Map{}}
 }
 
 func (m *Model) Page(page, limit int) types.ORMModel {

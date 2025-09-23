@@ -37,7 +37,7 @@ func main() {
 	// 使用配置结构体初始化ORM
 	orm := morm.InitWithDBConfig(dbConfig)
 
-	fmt.Println("第一次写入数据")
+	fmt.Println("第一次为写入数据")
 	err := orm.Model(&DBStruct{}).Where(&DBStruct{Name: "test"}).Save(&DBStruct{
 		Value: 1,
 	})
@@ -53,4 +53,23 @@ func main() {
 		return
 	}
 	fmt.Println("查询结果:", dbData)
+	count := orm.Model(&DBStruct{}).Where(&DBStruct{Name: "test"}).Count()
+	fmt.Println("数据数量:", count)
+	fmt.Println("第二次为更新数据")
+	err = orm.Model(&DBStruct{}).Where(&DBStruct{Name: "test"}).Save(&DBStruct{
+		Value: 2,
+	})
+	if err != nil {
+		fmt.Println("更新数据失败:", err)
+		return
+	}
+	// 查询更新的数据
+	count = orm.Model(&DBStruct{}).Where(&DBStruct{Name: "test"}).Count()
+	fmt.Println("数据数量:", count)
+	err = orm.Model(&DBStruct{}).Where(&DBStruct{Name: "test"}).One(&dbData)
+	if err != nil {
+		fmt.Println("查询更新数据失败:", err)
+		return
+	}
+	fmt.Println("查询更新结果:", dbData)
 }
