@@ -35,16 +35,25 @@ type Cursor interface {
 
 type ORMModel interface {
 	// 插入数据
-	// 返回ID和错误
+	// 返回错误
 	// 传入的必须是结构体指针才可以修改原始数据
-	Create(data any) (string, error)
+	Create(data any) error
+
+	// 插入数据
+	// 等同Create
+	Insert(data any) error
 
 	// 更新或插入数据
-	// 返回ID和错误
+	// 返回错误
 	// 传入的必须是结构体指针才可以修改原始数据
-	// Save(&User{ID:123}) 会生成 INSERT INTO User (ID) VALUES (123) ON DUPLICATE KEY UPDATE ID = 123
-	// Save("ID",123) 也会生成 INSERT INTO User (ID) VALUES (123) ON DUPLICATE KEY UPDATE ID = 123
-	Save(data any, value ...any) (string, error)
+	// 输入Where(&User{Name:"test"}).Save(&User{Value:"123"})
+	// 当User表中的Name有test数据时，则修改该数据的Value为 123
+	// 当User表中的Name没有test数据时，则插入该数据 User{Name:"test",Value:"123"}
+	Save(data any, value ...any) error
+
+	// 更新或插入数据
+	// 等同Save
+	Upsert(data any, value ...any) error
 
 	// 更新
 	// 返回错误 考虑更新可能更新多条 不返回ID
@@ -165,7 +174,7 @@ type ORMQuary interface {
 	// 查询全部数据
 	All(data any) error
 	// 返回查询个数
-	Count() (int64, error)
+	Count() int64
 	// 删除查询结果
 	Delete() error
 	// 游标

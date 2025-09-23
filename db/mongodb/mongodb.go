@@ -270,21 +270,22 @@ func isZero(v reflect.Value) bool {
 	}
 }
 
-func (m *Model) Create(data any) (id string, err error) {
+func (m *Model) Create(data any) (err error) {
 	m.CheckOID()
 	if data != nil {
 		m.Data = data
 	}
 	bsonData, err := ConvertToBSONM(m.Data)
 	if err != nil {
-		return "", err
+		return err
 	}
 	log.Debugf("创建MongoDB数据: %+v\n", bsonData)
 	result, err := m.Tx.Client.Database(m.Tx.Database).Collection(m.GetCollection(m.Data)).InsertOne(m.GetContext(), bsonData)
 	if err != nil {
 		log.Error(err)
-		return "", err
+		return err
 	}
+	var id string
 	if result.InsertedID == nil {
 		if m.WhereList["_id"] != nil {
 			id = fmt.Sprint(m.WhereList["_id"])
@@ -301,18 +302,22 @@ func (m *Model) Create(data any) (id string, err error) {
 	}
 	setIDField(m.Data, id)
 	// log.Debugf("写入后的Date数据: %+v\n", m.Data)
-	return id, err
+	return
+}
+
+func (m *Model) Insert(data any) error {
+	return m.Create(data)
 }
 
 // 更新或插入数据
-func (m *Model) Save(data any, value ...any) (id string, err error) {
+func (m *Model) Save(data any, value ...any) (err error) {
 	m.CheckOID()
 	if data != nil {
 		m.Data = data
 	}
 	bsonData, err := ConvertToBSONM(data)
 	if err != nil {
-		return "", err
+		return err
 	}
 	log.Debugf("MongoDB保存Where条件: %+v\n", m.WhereList)
 	update := make(bson.M)
@@ -342,8 +347,9 @@ func (m *Model) Save(data any, value ...any) (id string, err error) {
 	result, err := m.Tx.Client.Database(m.Tx.Database).Collection(m.GetCollection(m.Data)).UpdateOne(m.GetContext(), m.WhereList, update, opts)
 	if err != nil {
 		log.Error(err)
-		return "", err
+		return err
 	}
+	var id string
 	if result.UpsertedID == nil {
 		if m.WhereList["_id"] != nil {
 			id = fmt.Sprint(m.WhereList["_id"])
@@ -360,6 +366,10 @@ func (m *Model) Save(data any, value ...any) (id string, err error) {
 	}
 	setIDField(m.Data, id)
 	return
+}
+
+func (m *Model) Upsert(data any, value ...any) error {
+	return m.Save(data, value...)
 }
 
 // 删除
@@ -440,8 +450,7 @@ func (m *Model) All(data any) error {
 }
 
 func (m *Model) Count() int64 {
-	i, _ := m.Find().Count()
-	return i
+	return m.Find().Count()
 }
 
 func (m *Model) Cursor() (types.Cursor, error) {

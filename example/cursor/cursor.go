@@ -43,7 +43,7 @@ func main() {
 			ID:   fmt.Sprint(i),
 			Name: "测试数据" + fmt.Sprint(i),
 		}
-		_, err := orm.Model(dbData).Create(dbData)
+		err := orm.Model(dbData).Create(dbData)
 		if err != nil {
 			fmt.Printf("写入数据失败: %v\n", err)
 			return

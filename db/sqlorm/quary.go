@@ -21,8 +21,10 @@ func (q *Quary) All(data any) error {
 	return q.m.makeQuary().Find(data).Error
 }
 
-func (q *Quary) Count() (i int64, err error) {
-	return i, q.m.makeQuary().Count(&i).Error
+func (q *Quary) Count() int64 {
+	var i int64
+	q.m.makeQuary().Count(&i)
+	return i
 }
 
 func (q *Quary) Delete() error {

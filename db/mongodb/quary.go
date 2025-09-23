@@ -49,8 +49,9 @@ func (q *Quary) All(data any) error {
 	return err
 }
 
-func (q *Quary) Count() (int64, error) {
-	return q.m.Tx.Client.Database(q.m.Tx.Database).Collection(q.m.GetCollection(q.m.Data)).CountDocuments(q.m.GetContext(), q.m.WhereList)
+func (q *Quary) Count() int64 {
+	i, _ := q.m.Tx.Client.Database(q.m.Tx.Database).Collection(q.m.GetCollection(q.m.Data)).CountDocuments(q.m.GetContext(), q.m.WhereList)
+	return i
 }
 
 type IDModel struct {

@@ -48,12 +48,12 @@ func main() {
 
 	// 写入数据
 	fmt.Println("正在写入数据...")
-	id, err := orm.Model(dbData).Create(dbData)
+	err := orm.Model(dbData).Create(&dbData)
 	if err != nil {
 		fmt.Printf("写入数据失败: %v\n", err)
 		return
 	}
-	fmt.Printf("写入数据成功, ID: %s\n", id)
+	fmt.Printf("写入数据成功, ID: %s\n", dbData.ID)
 
 	// 查询数据
 	fmt.Println("正在查询数据...")

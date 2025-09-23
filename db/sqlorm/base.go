@@ -8,19 +8,20 @@ import (
 )
 
 // 插入数据
-func (m *Model) Create(data any) (id string, err error) {
+func (m *Model) Create(data any) (err error) {
 	if data != nil {
 		m.Data = data
 	}
 	err = m.getDB().Create(m.Data).Scan(m.Data).Error
-	if err == nil {
-		id = m.getID(m.Data)
-	}
 	return
 }
 
+func (m *Model) Insert(data any) (err error) {
+	return m.Create(data)
+}
+
 // 更新或插入数据
-func (m *Model) Save(data any, value ...any) (id string, err error) {
+func (m *Model) Save(data any, value ...any) (err error) {
 	if data != nil {
 		m.Data = data
 	}
@@ -31,10 +32,11 @@ func (m *Model) Save(data any, value ...any) (id string, err error) {
 		}
 	}
 	err = q.Save(m.Data).Scan(m.Data).Error
-	if err == nil {
-		id = m.getID(m.Data)
-	}
 	return
+}
+
+func (m *Model) Upsert(data any, value ...any) error {
+	return m.Save(data, value...)
 }
 
 // 删除
@@ -73,8 +75,7 @@ func (q *Model) All(data any) error {
 }
 
 func (q *Model) Count() int64 {
-	i, _ := q.Find().Count()
-	return i
+	return q.Find().Count()
 }
 
 func (q *Model) Cursor() (types.Cursor, error) {
