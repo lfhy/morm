@@ -10,10 +10,14 @@ type MongoDBConfig struct {
 	Database string `mapstructure:"mongodb.database"`
 	// 连接池大小
 	OptionPoolSize string `mapstructure:"mongodb.option_pool_size"`
-	// mongodb代理连接方法
+	// mongodb代理连接方法 必须是socks代理
 	Proxy string `mapstructure:"mongodb.proxy"`
 	// mongodb连接uri mongodb://[认证用户名]:[认证密码]@[连接地址]/[额外参数]
 	Uri string `mapstructure:"mongodb.uri"`
+	// w 写关注 默认majority
+	W string `mapstructure:"mongodb.w"`
+	// ReadMode 读模式 master nearest
+	ReadMode string `mapstructure:"mongodb.readmode"`
 }
 
 // Init 将MongoDB配置设置到config单例上
@@ -35,4 +39,6 @@ func (m *MongoDBConfig) Init() {
 	config.Set("mongodb.option_pool_size", m.OptionPoolSize)
 	config.Set("mongodb.proxy", m.Proxy)
 	config.Set("mongodb.uri", m.Uri)
+	config.Set("mongodb.w", m.W)
+	config.Set("mongodb.readmode", m.ReadMode)
 }

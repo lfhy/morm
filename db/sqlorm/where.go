@@ -270,7 +270,7 @@ func (m *Model) getID(condition any) (id string) {
 			v, ok := value.Tag.Lookup("gorm")
 			if ok {
 				for _, v2 := range strings.Split(v, ";") {
-					if strings.HasPrefix(v2, "column:id") || strings.HasPrefix(v2, "primaryKey") {
+					if strings.HasPrefix(v2, "id") || strings.HasPrefix(v2, "column:id") || strings.HasPrefix(v2, "primaryKey") {
 						return fmt.Sprint(t.Field(i).Interface())
 					}
 				}

@@ -50,10 +50,9 @@ func Init() (types.ORM, error) {
 	}
 	poolSize := conf.ReadConfigToInt("mongodb", "option_pool_size")
 	readMode := conf.ReadConfigToString("mongodb", "readmode")
-	W := conf.ReadConfigToInt("mongodb", "w")
-	if W == 0 {
-		//只写到主节点
-		W = 1
+	W := conf.ReadConfigToString("mongodb", "w")
+	if W == "" {
+		W = "majority"
 	}
 	if poolSize == 0 {
 		poolSize = 150
@@ -270,22 +269,21 @@ func isZero(v reflect.Value) bool {
 	}
 }
 
-func (m *Model) Create(data any) (err error) {
+func (m *Model) Create(data any) (id string, err error) {
 	m.CheckOID()
 	if data != nil {
 		m.Data = data
 	}
 	bsonData, err := ConvertToBSONM(m.Data)
 	if err != nil {
-		return err
+		return "", err
 	}
 	log.Debugf("创建MongoDB数据: %+v\n", bsonData)
 	result, err := m.Tx.Client.Database(m.Tx.Database).Collection(m.GetCollection(m.Data)).InsertOne(m.GetContext(), bsonData)
 	if err != nil {
 		log.Error(err)
-		return err
+		return "", err
 	}
-	var id string
 	if result.InsertedID == nil {
 		if m.WhereList["_id"] != nil {
 			id = fmt.Sprint(m.WhereList["_id"])
@@ -306,7 +304,8 @@ func (m *Model) Create(data any) (err error) {
 }
 
 func (m *Model) Insert(data any) error {
-	return m.Create(data)
+	_, err := m.Create(data)
+	return err
 }
 
 // 更新或插入数据

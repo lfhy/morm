@@ -37,7 +37,7 @@ type ORMModel interface {
 	// 插入数据
 	// 返回错误
 	// 传入的必须是结构体指针才可以修改原始数据
-	Create(data any) error
+	Create(data any) (string, error)
 
 	// 插入数据
 	// 等同Create

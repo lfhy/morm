@@ -8,16 +8,18 @@ import (
 )
 
 // 插入数据
-func (m *Model) Create(data any) (err error) {
+func (m *Model) Create(data any) (id string, err error) {
 	if data != nil {
 		m.Data = data
 	}
 	err = m.getDB().Create(m.Data).Scan(m.Data).Error
+	id = m.getID(m.Data)
 	return
 }
 
 func (m *Model) Insert(data any) (err error) {
-	return m.Create(data)
+	_, err = m.Create(data)
+	return
 }
 
 // 更新或插入数据

@@ -59,12 +59,12 @@ func main() {
 
 	// 写入数据
 	db.Name = "test"
-	err := db.M().Create(&db)
+	id, err := db.M().Create(&db)
 	if err != nil {
 		fmt.Printf("写入数据失败:%v\n", err)
 		return
 	}
-	fmt.Printf("写入数据成功,id:%s\n", db)
+	fmt.Printf("写入数据成功,id:%s\n", id)
 
 	// 创建查询
 	var find DBSturct

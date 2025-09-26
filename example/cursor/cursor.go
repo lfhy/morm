@@ -43,11 +43,12 @@ func main() {
 			ID:   fmt.Sprint(i),
 			Name: "测试数据" + fmt.Sprint(i),
 		}
-		err := orm.Model(dbData).Create(dbData)
+		id, err := orm.Model(dbData).Create(dbData)
 		if err != nil {
 			fmt.Printf("写入数据失败: %v\n", err)
 			return
 		}
+		fmt.Printf("写入数据成功, ID: %s\n", id)
 	}
 	fmt.Println("数据写入成功")
 	// 使用游标查询
