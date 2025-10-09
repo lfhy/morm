@@ -71,7 +71,7 @@ func main() {
 	var idasc, iddesc, createasc, createdesc []*DBSturct
 	fmt.Println("查询ID升序数据")
 	var sortDB DBSturct
-	sortDB.SortDBStruct = SortDBStruct{ID: 1}
+	sortDB.ID = 1
 	db.M().Where(&DBSturct{IsDelete: 1}).Page(1, 3).Asc(sortDB).All(&idasc)
 	for _, data := range idasc {
 		fmt.Printf("查询结果:%+v\n", data)
@@ -82,7 +82,7 @@ func main() {
 		fmt.Printf("查询结果:%+v\n", data)
 	}
 	fmt.Println("查询CreateTime升序数据")
-	sortDB.SortDBStruct = SortDBStruct{CreateTime: 1}
+	sortDB.CreateTime = 1
 	db.M().Where(&DBSturct{IsDelete: 1}).Page(1, 3).Asc(sortDB).All(&createasc)
 	for _, data := range createasc {
 		fmt.Printf("查询结果:%+v\n", data)
