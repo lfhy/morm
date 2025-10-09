@@ -140,72 +140,86 @@ func (m *Model) whereMode(condition any, mode int) types.ORMModel {
 	}
 	switch t.Kind() {
 	case reflect.Struct:
-	l1:
-		for i := 0; i < t.NumField(); i++ {
-			if t.Field(i).IsZero() {
-				continue
-			}
-			dtype := t.Type()
-			value := dtype.Field(i)
-			v, ok := value.Tag.Lookup("gorm")
-			if ok {
-				for _, v2 := range strings.Split(v, ";") {
-					if strings.HasPrefix(v2, "column:") {
-						switch mode {
-						case WhereIs:
-							column := strings.TrimPrefix(v2, "column:")
-							value := t.Field(i).Interface()
-							m.upsertOp.Store(column, value)
-							m.OpList.Store(fmt.Sprintf("where %s = ?", column), value)
-						case WhereNot:
-							m.OpList.Store(fmt.Sprintf("not %s = ?", strings.TrimPrefix(v2, "column:")), t.Field(i).Interface())
-						case WhereGt:
-							m.OpList.Store(fmt.Sprintf("where %s > ?", strings.TrimPrefix(v2, "column:")), t.Field(i).Interface())
-						case WhereLt:
-							m.OpList.Store(fmt.Sprintf("where %s < ?", strings.TrimPrefix(v2, "column:")), t.Field(i).Interface())
-						case WhereOr:
-							m.OpList.Store(fmt.Sprintf("or %s = ?", strings.TrimPrefix(v2, "column:")), t.Field(i).Interface())
-						case OrderAsc:
-							m.OpList.Store(fmt.Sprintf("asc %s", strings.TrimPrefix(v2, "column:")), "")
-						case OrderDesc:
-							m.OpList.Store(fmt.Sprintf("desc %s", strings.TrimPrefix(v2, "column:")), "")
-						case WhereGte:
-							m.OpList.Store(fmt.Sprintf("where %s >= ?", strings.TrimPrefix(v2, "column:")), t.Field(i).Interface())
-						case WhereLte:
-							m.OpList.Store(fmt.Sprintf("where %s <= ?", strings.TrimPrefix(v2, "column:")), t.Field(i).Interface())
+		// 处理结构体的字段，包括嵌套的匿名结构体
+		var processStructFields func(reflect.Value, reflect.Type)
+		processStructFields = func(val reflect.Value, typ reflect.Type) {
+		l1:
+			for i := 0; i < val.NumField(); i++ {
+				field := val.Field(i)
+				fieldType := typ.Field(i)
+				
+				// 如果是嵌套的匿名结构体，递归处理
+				if field.Kind() == reflect.Struct && fieldType.Anonymous {
+					processStructFields(field, fieldType.Type)
+					continue
+				}
+				
+				if field.IsZero() {
+					continue
+				}
+				
+				v, ok := fieldType.Tag.Lookup("gorm")
+				if ok {
+					for _, v2 := range strings.Split(v, ";") {
+						if strings.HasPrefix(v2, "column:") {
+							switch mode {
+							case WhereIs:
+								column := strings.TrimPrefix(v2, "column:")
+								value := field.Interface()
+								m.upsertOp.Store(column, value)
+								m.OpList.Store(fmt.Sprintf("where %s = ?", column), value)
+							case WhereNot:
+								m.OpList.Store(fmt.Sprintf("not %s = ?", strings.TrimPrefix(v2, "column:")), field.Interface())
+							case WhereGt:
+								m.OpList.Store(fmt.Sprintf("where %s > ?", strings.TrimPrefix(v2, "column:")), field.Interface())
+							case WhereLt:
+								m.OpList.Store(fmt.Sprintf("where %s < ?", strings.TrimPrefix(v2, "column:")), field.Interface())
+							case WhereOr:
+								m.OpList.Store(fmt.Sprintf("or %s = ?", strings.TrimPrefix(v2, "column:")), field.Interface())
+							case OrderAsc:
+								m.OpList.Store(fmt.Sprintf("asc %s", strings.TrimPrefix(v2, "column:")), "")
+							case OrderDesc:
+								m.OpList.Store(fmt.Sprintf("desc %s", strings.TrimPrefix(v2, "column:")), "")
+							case WhereGte:
+								m.OpList.Store(fmt.Sprintf("where %s >= ?", strings.TrimPrefix(v2, "column:")), field.Interface())
+							case WhereLte:
+								m.OpList.Store(fmt.Sprintf("where %s <= ?", strings.TrimPrefix(v2, "column:")), field.Interface())
+							}
+							continue l1
+						} else if !strings.Contains(v2, ":") {
+							// 直接输入字段信息的情况
+							switch mode {
+							case WhereIs:
+								column := v2
+								value := field.Interface()
+								m.upsertOp.Store(column, value)
+								m.OpList.Store(fmt.Sprintf("where %s = ?", column), value)
+							case WhereNot:
+								m.OpList.Store(fmt.Sprintf("not %s = ?", v2), field.Interface())
+							case WhereGt:
+								m.OpList.Store(fmt.Sprintf("where %s > ?", v2), field.Interface())
+							case WhereLt:
+								m.OpList.Store(fmt.Sprintf("where %s < ?", v2), field.Interface())
+							case WhereOr:
+								m.OpList.Store(fmt.Sprintf("or %s = ?", v2), field.Interface())
+							case OrderAsc:
+								m.OpList.Store(fmt.Sprintf("asc %s", v2), "")
+							case OrderDesc:
+								m.OpList.Store(fmt.Sprintf("desc %s", v2), "")
+							case WhereGte:
+								m.OpList.Store(fmt.Sprintf("where %s >= ?", v2), field.Interface())
+							case WhereLte:
+								m.OpList.Store(fmt.Sprintf("where %s <= ?", v2), field.Interface())
+							}
+							continue l1
 						}
-						continue l1
-					} else if !strings.Contains(v2, ":") {
-						// 直接输入字段信息的情况
-						switch mode {
-						case WhereIs:
-							column := v2
-							value := t.Field(i).Interface()
-							m.upsertOp.Store(column, value)
-							m.OpList.Store(fmt.Sprintf("where %s = ?", column), value)
-						case WhereNot:
-							m.OpList.Store(fmt.Sprintf("not %s = ?", v2), t.Field(i).Interface())
-						case WhereGt:
-							m.OpList.Store(fmt.Sprintf("where %s > ?", v2), t.Field(i).Interface())
-						case WhereLt:
-							m.OpList.Store(fmt.Sprintf("where %s < ?", v2), t.Field(i).Interface())
-						case WhereOr:
-							m.OpList.Store(fmt.Sprintf("or %s = ?", v2), t.Field(i).Interface())
-						case OrderAsc:
-							m.OpList.Store(fmt.Sprintf("asc %s", v2), "")
-						case OrderDesc:
-							m.OpList.Store(fmt.Sprintf("desc %s", v2), "")
-						case WhereGte:
-							m.OpList.Store(fmt.Sprintf("where %s >= ?", v2), t.Field(i).Interface())
-						case WhereLte:
-							m.OpList.Store(fmt.Sprintf("where %s <= ?", v2), t.Field(i).Interface())
-						}
-						continue l1
-
 					}
 				}
 			}
 		}
+		
+		// 开始处理当前结构体的字段
+		processStructFields(t, t.Type())
 	}
 	return m
 }
@@ -262,16 +276,35 @@ func (m *Model) getID(condition any) (id string) {
 	switch t.Kind() {
 	case reflect.Struct:
 		for i := 0; i < t.NumField(); i++ {
-			if t.Field(i).IsZero() {
+			field := t.Field(i)
+			fieldType := t.Type().Field(i)
+
+			// 如果是嵌套结构体(匿名字段)，递归处理
+			if field.Kind() == reflect.Struct && fieldType.Anonymous {
+				if !field.IsZero() {
+					nestedValue := field.Interface()
+					if nestedID := m.getID(nestedValue); nestedID != "" {
+						return nestedID
+					}
+				} else {
+					// 即使嵌套结构体为空，也要检查其类型定义
+					nestedStruct := reflect.New(field.Type()).Elem().Interface()
+					if nestedID := m.getID(nestedStruct); nestedID != "" {
+						// 但由于值为空，实际上没有可用的ID
+						continue
+					}
+				}
 				continue
 			}
-			dtype := t.Type()
-			value := dtype.Field(i)
-			v, ok := value.Tag.Lookup("gorm")
+
+			if field.IsZero() {
+				continue
+			}
+			v, ok := fieldType.Tag.Lookup("gorm")
 			if ok {
 				for _, v2 := range strings.Split(v, ";") {
 					if strings.HasPrefix(v2, "id") || strings.HasPrefix(v2, "column:id") || strings.HasPrefix(v2, "primaryKey") {
-						return fmt.Sprint(t.Field(i).Interface())
+						return fmt.Sprint(field.Interface())
 					}
 				}
 			}

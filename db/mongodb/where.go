@@ -172,63 +172,76 @@ func (m *Model) whereMode(condition any, mode int) types.ORMModel {
 
 	switch t.Kind() {
 	case reflect.Struct:
-		for i := 0; i < t.NumField(); i++ {
-			if t.Field(i).IsZero() {
-				continue
-			}
-			dtype := t.Type()
-			value := dtype.Field(i)
-			v, ok := value.Tag.Lookup("bson")
-			if ok {
-				switch mode {
-				case WhereIs:
-					if v == "_id" {
-						m.WhereList[v] = t.Field(i).Interface()
-						continue
-					}
-					m.WhereList[v] = bson.M{"$eq": t.Field(i).Interface()}
-				case WhereNot:
-					if v == "_id" {
-						ids, err := primitive.ObjectIDFromHex(t.Field(i).Interface().(string))
-						if err != nil {
-							log.Error(err)
+		// 定义一个内部函数来递归处理结构体字段（包括嵌套的匿名结构体）
+		var processStructFields func(reflect.Value, reflect.Type)
+		processStructFields = func(val reflect.Value, typ reflect.Type) {
+			for i := 0; i < val.NumField(); i++ {
+				field := val.Field(i)
+				fieldType := typ.Field(i)
+				
+				// 如果是嵌套的匿名结构体，递归处理
+				if field.Kind() == reflect.Struct && fieldType.Anonymous {
+					processStructFields(field, fieldType.Type)
+					continue
+				}
+				
+				if field.IsZero() {
+					continue
+				}
+				v, ok := fieldType.Tag.Lookup("bson")
+				if ok {
+					switch mode {
+					case WhereIs:
+						if v == "_id" {
+							m.WhereList[v] = field.Interface()
+							continue
 						}
-						m.WhereList[v] = bson.M{"$ne": ids}
-						continue
-					}
-					m.WhereList[v] = bson.M{"$ne": t.Field(i).Interface()}
-				case WhereGt:
-					m.WhereList[v] = bson.M{"$gt": t.Field(i).Interface()}
-				case WhereLt:
-					m.WhereList[v] = bson.M{"$lt": t.Field(i).Interface()}
-				case WhereGte:
-					m.WhereList[v] = bson.M{"$gte": t.Field(i).Interface()}
-				case WhereLte:
-					m.WhereList[v] = bson.M{"$lte": t.Field(i).Interface()}
-				case WhereOr:
-					m.WhereList[v] = bson.M{"$or": t.Field(i).Interface()}
-				case OrderAsc:
-					data, ok := m.OpList.Load("sort")
-					if !ok {
-						m.OpList.Store("sort", bson.D{{Key: v, Value: 1}})
-					} else {
-						sort := data.(bson.D)
-						sort = append(sort, bson.E{Key: v, Value: 1})
-						m.OpList.Store("asc", sort)
-					}
-				case OrderDesc:
-					data, ok := m.OpList.Load("sort")
-					if !ok {
-						m.OpList.Store("sort", bson.D{{Key: v, Value: -1}})
-					} else {
-						sort := data.(bson.D)
-						sort = append(sort, bson.E{Key: v, Value: -1})
-						m.OpList.Store("sort", sort)
+						m.WhereList[v] = bson.M{"$eq": field.Interface()}
+					case WhereNot:
+						if v == "_id" {
+							ids, err := primitive.ObjectIDFromHex(field.Interface().(string))
+							if err != nil {
+								log.Error(err)
+							}
+							m.WhereList[v] = bson.M{"$ne": ids}
+							continue
+						}
+						m.WhereList[v] = bson.M{"$ne": field.Interface()}
+					case WhereGt:
+						m.WhereList[v] = bson.M{"$gt": field.Interface()}
+					case WhereLt:
+						m.WhereList[v] = bson.M{"$lt": field.Interface()}
+					case WhereGte:
+						m.WhereList[v] = bson.M{"$gte": field.Interface()}
+					case WhereLte:
+						m.WhereList[v] = bson.M{"$lte": field.Interface()}
+					case WhereOr:
+						m.WhereList[v] = bson.M{"$or": field.Interface()}
+					case OrderAsc:
+						data, ok := m.OpList.Load("sort")
+						if !ok {
+							m.OpList.Store("sort", bson.D{{Key: v, Value: 1}})
+						} else {
+							sort := data.(bson.D)
+							sort = append(sort, bson.E{Key: v, Value: 1})
+							m.OpList.Store("asc", sort)
+						}
+					case OrderDesc:
+						data, ok := m.OpList.Load("sort")
+						if !ok {
+							m.OpList.Store("sort", bson.D{{Key: v, Value: -1}})
+						} else {
+							sort := data.(bson.D)
+							sort = append(sort, bson.E{Key: v, Value: -1})
+							m.OpList.Store("sort", sort)
+						}
 					}
 				}
-
 			}
 		}
+		
+		// 处理当前结构体的字段
+		processStructFields(t, t.Type())
 	}
 	return m
 }
@@ -347,6 +360,16 @@ func handleStruct(val reflect.Value, value string) {
 	typ := val.Type()
 	for i := 0; i < typ.NumField(); i++ {
 		field := typ.Field(i)
+		
+		// 如果是嵌套结构体(匿名字段)，递归处理
+		if field.Type.Kind() == reflect.Struct && field.Anonymous {
+			nestedVal := val.Field(i)
+			if nestedVal.CanAddr() && nestedVal.Kind() == reflect.Struct {
+				handleStruct(nestedVal, value)
+			}
+			continue
+		}
+		
 		// 解析 bson 标签
 		bsonTag := field.Tag.Get("bson")
 		if bsonTag == "" {
