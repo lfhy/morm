@@ -20,6 +20,7 @@ const (
 	OrderDesc
 	WhereGte
 	WhereLte
+	WhereLike
 )
 
 // 限制条件
@@ -38,6 +39,17 @@ func (m *Model) Where(condition any, value ...any) types.ORMModel {
 func (m *Model) WhereIs(key string, value any) types.ORMModel {
 	m.OpList.Store(key, value)
 	return m
+}
+
+func (m *Model) WhereLike(condition any, value ...any) types.ORMModel {
+	if len(value) > 0 {
+		key, ok := condition.(string)
+		if ok {
+			m.OpList.Store(fmt.Sprintf("where %s like ?", key), value[0])
+			return m
+		}
+	}
+	return m.whereMode(condition, WhereLike)
 }
 
 func (m *Model) WhereNot(condition any, value ...any) types.ORMModel {
@@ -147,17 +159,17 @@ func (m *Model) whereMode(condition any, mode int) types.ORMModel {
 			for i := 0; i < val.NumField(); i++ {
 				field := val.Field(i)
 				fieldType := typ.Field(i)
-				
+
 				// 如果是嵌套的匿名结构体，递归处理
 				if field.Kind() == reflect.Struct && fieldType.Anonymous {
 					processStructFields(field, fieldType.Type)
 					continue
 				}
-				
+
 				if field.IsZero() {
 					continue
 				}
-				
+
 				v, ok := fieldType.Tag.Lookup("gorm")
 				if ok {
 					for _, v2 := range strings.Split(v, ";") {
@@ -184,6 +196,8 @@ func (m *Model) whereMode(condition any, mode int) types.ORMModel {
 								m.OpList.Store(fmt.Sprintf("where %s >= ?", strings.TrimPrefix(v2, "column:")), field.Interface())
 							case WhereLte:
 								m.OpList.Store(fmt.Sprintf("where %s <= ?", strings.TrimPrefix(v2, "column:")), field.Interface())
+							case WhereLike:
+								m.OpList.Store(fmt.Sprintf("where %s like ?", strings.TrimPrefix(v2, "column:")), "%"+fmt.Sprint(field.Interface())+"%")
 							}
 							continue l1
 						} else if !strings.Contains(v2, ":") {
@@ -210,6 +224,8 @@ func (m *Model) whereMode(condition any, mode int) types.ORMModel {
 								m.OpList.Store(fmt.Sprintf("where %s >= ?", v2), field.Interface())
 							case WhereLte:
 								m.OpList.Store(fmt.Sprintf("where %s <= ?", v2), field.Interface())
+							case WhereLike:
+								m.OpList.Store(fmt.Sprintf("where %s like ?", v2), "%"+fmt.Sprint(field.Interface())+"%")
 							}
 							continue l1
 						}
@@ -217,7 +233,7 @@ func (m *Model) whereMode(condition any, mode int) types.ORMModel {
 				}
 			}
 		}
-		
+
 		// 开始处理当前结构体的字段
 		processStructFields(t, t.Type())
 	}

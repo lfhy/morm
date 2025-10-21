@@ -132,6 +132,15 @@ type ORMModel interface {
 	// Where("ID",12).WhereOr("ID",123) 也会生成 WHERE User.ID = 12 OR User.ID = 123
 	WhereOr(condition any, value ...any) ORMModel
 
+	// 模糊查询
+	// 输入WhereLike(&User{Name:"test"})
+	// 会生成 WHERE User.Name LIKE "%test%"
+	// 输入WhereLike("Name","_test%")
+	// 会生成 WHERE User.Name LIKE "_test%"
+	// Mongo则会使用$regex
+	// 使用结构体默认使用primitive.Regex{Pattern: "test", Options: "i"}
+	WhereLike(condition any, value ...any) ORMModel
+
 	// 限制查询的数量
 	Limit(limit int) ORMModel
 

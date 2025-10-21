@@ -23,6 +23,7 @@ const (
 	OrderDesc
 	WhereGte
 	WhereLte
+	WhereLike
 )
 
 // 限制条件
@@ -40,6 +41,17 @@ func (m *Model) Where(condition any, value ...any) types.ORMModel {
 func (m *Model) WhereIs(key string, value any) types.ORMModel {
 	m.WhereList[key] = value
 	return m
+}
+
+func (m *Model) WhereLike(condition any, value ...any) types.ORMModel {
+	if len(value) > 0 {
+		key, ok := condition.(string)
+		if ok {
+			m.WhereList[key] = bson.M{"$regex": value[0]}
+			return m
+		}
+	}
+	return m.whereMode(condition, WhereLike)
 }
 
 func (m *Model) WhereNot(condition any, value ...any) types.ORMModel {
@@ -178,13 +190,13 @@ func (m *Model) whereMode(condition any, mode int) types.ORMModel {
 			for i := 0; i < val.NumField(); i++ {
 				field := val.Field(i)
 				fieldType := typ.Field(i)
-				
+
 				// 如果是嵌套的匿名结构体，递归处理
 				if field.Kind() == reflect.Struct && fieldType.Anonymous {
 					processStructFields(field, fieldType.Type)
 					continue
 				}
-				
+
 				if field.IsZero() {
 					continue
 				}
@@ -235,11 +247,13 @@ func (m *Model) whereMode(condition any, mode int) types.ORMModel {
 							sort = append(sort, bson.E{Key: v, Value: -1})
 							m.OpList.Store("sort", sort)
 						}
+					case WhereLike:
+						m.WhereList[v] = bson.M{"$regex": primitive.Regex{Pattern: fmt.Sprint(field.Interface()), Options: "i"}}
 					}
 				}
 			}
 		}
-		
+
 		// 处理当前结构体的字段
 		processStructFields(t, t.Type())
 	}
@@ -360,7 +374,7 @@ func handleStruct(val reflect.Value, value string) {
 	typ := val.Type()
 	for i := 0; i < typ.NumField(); i++ {
 		field := typ.Field(i)
-		
+
 		// 如果是嵌套结构体(匿名字段)，递归处理
 		if field.Type.Kind() == reflect.Struct && field.Anonymous {
 			nestedVal := val.Field(i)
@@ -369,7 +383,7 @@ func handleStruct(val reflect.Value, value string) {
 			}
 			continue
 		}
-		
+
 		// 解析 bson 标签
 		bsonTag := field.Tag.Get("bson")
 		if bsonTag == "" {
