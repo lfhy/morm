@@ -4,9 +4,10 @@ import "github.com/lfhy/morm/types"
 
 type BaseModel interface {
 	M() Model
+	TableName() string
 }
 
-func List[T BaseModel](base T, ctx *ListOption, where func(m Model), listFn func(m T)) int64 {
+func List[T BaseModel](base T, ctx *ListOption, where func(m Model), listFn func(m T) bool) int64 {
 	model := base.M()
 	if where != nil {
 		where(model)
@@ -31,7 +32,9 @@ func List[T BaseModel](base T, ctx *ListOption, where func(m Model), listFn func
 		if err := cur.Decode(&base); err != nil {
 			continue
 		}
-		listFn(base)
+		if !listFn(base) {
+			break
+		}
 	}
 	return total
 }
