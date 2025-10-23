@@ -49,6 +49,7 @@ type ORMModel interface {
 	// 输入Where(&User{Name:"test"}).Save(&User{Value:"123"})
 	// 当User表中的Name有test数据时，则修改该数据的Value为 123
 	// 当User表中的Name没有test数据时，则插入该数据 User{Name:"test",Value:"123"}
+	// 支持传入Save(map[string]any{"name":"123"}) 进行构建
 	Save(data any, value ...any) error
 
 	// 更新或插入数据
@@ -60,6 +61,7 @@ type ORMModel interface {
 	// 传入的必须是结构体指针才可以修改原始数据
 	// Update(&User{ID:123}) 会生成 UPDATE User SET ID = 123
 	// Update("ID",123) 也会生成 UPDATE User SET ID = 123
+	// Update(map[string]any{"ID":"123"}) 也会生成 UPDATE User SET ID = 123
 	Update(data any, value ...any) error
 
 	// 批量写入
@@ -91,6 +93,7 @@ type ORMModel interface {
 	// 会根据每个结构体的赋值情况进行查询
 	// Where(&User{ID:123}) 会生成 WHERE User.ID = 123
 	// Where("ID",123) 也会生成 WHERE User.ID = 123
+	// Where(map[string]any{"ID":"123"}) 也会生成 WHERE User.ID = 123
 	Where(condition any, value ...any) ORMModel
 
 	// Equal等同Where
@@ -107,6 +110,7 @@ type ORMModel interface {
 	// 会根据每个结构体的赋值情况进行查询
 	// WhereNot(&User{ID:123}) 会生成 WHERE User.ID <> 123
 	// WhereNot("ID",123) 也会生成 WHERE User.ID <> 123
+	// WhereNot(map[string]any{"ID":"123"}) 也会生成 WHERE User.ID <> 123
 	WhereNot(condition any, value ...any) ORMModel
 
 	// Not等同WhereNot
@@ -116,6 +120,7 @@ type ORMModel interface {
 	// 会根据每个结构体的赋值情况进行查询
 	// WhereGt(&User{ID:123}) 会生成 WHERE User.ID > 123
 	// WhereGt("ID",123) 也会生成 WHERE User.ID > 123
+	// WhereGt(map[string]any{"ID":"123"}) 也会生成 WHERE User.ID > 123
 	WhereGt(condition any, value ...any) ORMModel
 
 	// Gt等同WhereGt
@@ -125,6 +130,7 @@ type ORMModel interface {
 	// 会根据每个结构体的赋值情况进行查询
 	// WhereLt(&User{ID:123}) 会生成 WHERE User.ID < 123
 	// WhereLt("ID",123) 也会生成 WHERE User.ID < 123
+	// WhereLt(map[string]any{"ID":"123"}) 也会生成 WHERE User.ID < 123
 	WhereLt(condition any, value ...any) ORMModel
 
 	// WhereLt等同WhereLt
@@ -134,6 +140,7 @@ type ORMModel interface {
 	// 会根据每个结构体的赋值情况进行查询
 	// WhereGte(&User{ID:123}) 会生成 WHERE User.ID >= 123
 	// WhereGte("ID",123) 也会生成 WHERE User.ID >= 123
+	// WhereGte(map[string]any{"ID":"123"}) 也会生成 WHERE User.ID >= 123
 	WhereGte(condition any, value ...any) ORMModel
 
 	// Gte等同WhereGte
@@ -143,6 +150,7 @@ type ORMModel interface {
 	// 会根据每个结构体的赋值情况进行查询
 	// WhereLte(&User{ID:123}) 会生成 WHERE User.ID <= 123
 	// WhereLte("ID",123) 也会生成 WHERE User.ID <= 123
+	// WhereLte(map[string]any{"ID":"123"}) 也会生成 WHERE User.ID <= 123
 	WhereLte(condition any, value ...any) ORMModel
 
 	// Lte等同WhereLte
@@ -152,6 +160,7 @@ type ORMModel interface {
 	// 会根据每个结构体的赋值情况进行查询
 	// Where(&User{ID:12}).WhereOr(&User{ID:123}) 会生成 WHERE User.ID = 12 OR User.ID = 123
 	// Where("ID",12).WhereOr("ID",123) 也会生成 WHERE User.ID = 12 OR User.ID = 123
+	// Where(map[string]any{"ID":"12"}).WhereOr(map[string]any{"ID":"123"}) 也会生成 WHERE User.ID = 12 OR User.ID = 123
 	WhereOr(condition any, value ...any) ORMModel
 
 	// Or等同WhereOr
