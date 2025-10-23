@@ -19,6 +19,8 @@ type ORM = types.ORM
 
 type ORMModel = types.ORMModel
 
+type Model = types.ORMModel
+
 type ORMQuary = types.ORMQuary
 
 type BulkWriteOperation = types.BulkWriteOperation
@@ -34,3 +36,5 @@ type MySQLConfig = conf.MySQLConfig
 type MongoDBConfig = conf.MongoDBConfig
 
 type Session = types.Session
+
+type ListOption = types.ListOption
