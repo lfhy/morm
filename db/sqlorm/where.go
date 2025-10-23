@@ -132,11 +132,21 @@ func (m *Model) Offset(offset int) types.ORMModel {
 
 // 正序
 func (m *Model) Asc(condition any) types.ORMModel {
+	key, ok := condition.(string)
+	if ok {
+		m.OpList.Store(fmt.Sprintf("asc %s", key), "")
+		return m
+	}
 	return m.whereMode(condition, OrderAsc)
 }
 
 // 逆序
 func (m *Model) Desc(condition any) types.ORMModel {
+	key, ok := condition.(string)
+	if ok {
+		m.OpList.Store(fmt.Sprintf("desc %s", key), "")
+		return m
+	}
 	return m.whereMode(condition, OrderDesc)
 }
 func (m *Model) whereMode(condition any, mode int) types.ORMModel {
