@@ -93,7 +93,14 @@ type ORMModel interface {
 	// Where("ID",123) 也会生成 WHERE User.ID = 123
 	Where(condition any, value ...any) ORMModel
 
+	// Equel等同Where
+	Equel(key any, value ...any) ORMModel
+
 	// WhereIs传入 key和value 根据生成表达式
+	// WhereIs允许用户直接操作gorm或者mongo的opList
+	// 如果数据库是gorm的则可以传入gorm的语法如 WhereIs("where user = ?","123")
+	// 如果数据库是mongo的则可以传入mongo的语法如 WhereIs("user",bson.M{"$eq":123})
+	// 在非必要的情况下不建议使用WhereIs
 	WhereIs(key string, value any) ORMModel
 
 	// WhereNot只能传入结构体
@@ -102,11 +109,17 @@ type ORMModel interface {
 	// WhereNot("ID",123) 也会生成 WHERE User.ID <> 123
 	WhereNot(condition any, value ...any) ORMModel
 
+	// Not等同WhereNot
+	Not(condition any, value ...any) ORMModel
+
 	// WhereGt只能传入结构体
 	// 会根据每个结构体的赋值情况进行查询
 	// WhereGt(&User{ID:123}) 会生成 WHERE User.ID > 123
 	// WhereGt("ID",123) 也会生成 WHERE User.ID > 123
 	WhereGt(condition any, value ...any) ORMModel
+
+	// Gt等同WhereGt
+	Gt(condition any, value ...any) ORMModel
 
 	// WhereLt只能传入结构体
 	// 会根据每个结构体的赋值情况进行查询
@@ -114,11 +127,17 @@ type ORMModel interface {
 	// WhereLt("ID",123) 也会生成 WHERE User.ID < 123
 	WhereLt(condition any, value ...any) ORMModel
 
+	// WhereLt等同WhereLt
+	Lt(condition any, value ...any) ORMModel
+
 	// WhereGte只能传入结构体
 	// 会根据每个结构体的赋值情况进行查询
 	// WhereGte(&User{ID:123}) 会生成 WHERE User.ID >= 123
 	// WhereGte("ID",123) 也会生成 WHERE User.ID >= 123
 	WhereGte(condition any, value ...any) ORMModel
+
+	// Gte等同WhereGte
+	Gte(condition any, value ...any) ORMModel
 
 	// WhereLte只能传入结构体
 	// 会根据每个结构体的赋值情况进行查询
@@ -126,11 +145,17 @@ type ORMModel interface {
 	// WhereLte("ID",123) 也会生成 WHERE User.ID <= 123
 	WhereLte(condition any, value ...any) ORMModel
 
+	// Lte等同WhereLte
+	Lte(condition any, value ...any) ORMModel
+
 	// WhereOr只能传入结构体
 	// 会根据每个结构体的赋值情况进行查询
 	// Where(&User{ID:12}).WhereOr(&User{ID:123}) 会生成 WHERE User.ID = 12 OR User.ID = 123
 	// Where("ID",12).WhereOr("ID",123) 也会生成 WHERE User.ID = 12 OR User.ID = 123
 	WhereOr(condition any, value ...any) ORMModel
+
+	// Or等同WhereOr
+	Or(condition any, value ...any) ORMModel
 
 	// 模糊查询
 	// 输入WhereLike(&User{Name:"test"})
@@ -140,6 +165,10 @@ type ORMModel interface {
 	// Mongo则会使用$regex
 	// 使用结构体默认使用primitive.Regex{Pattern: "test", Options: "i"}
 	WhereLike(condition any, value ...any) ORMModel
+
+	// 模糊查询
+	// 等同WhereLike
+	Like(condition any, value ...any) ORMModel
 
 	// 限制查询的数量
 	Limit(limit int) ORMModel
