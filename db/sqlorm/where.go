@@ -10,19 +10,6 @@ import (
 	"gorm.io/gorm"
 )
 
-const (
-	WhereIs = iota
-	WhereNot
-	WhereGt
-	WhereLt
-	WhereOr
-	OrderAsc
-	OrderDesc
-	WhereGte
-	WhereLte
-	WhereLike
-)
-
 // 限制条件
 func (m *Model) Where(condition any, value ...any) types.ORMModel {
 	if len(value) > 0 {
@@ -33,7 +20,7 @@ func (m *Model) Where(condition any, value ...any) types.ORMModel {
 			return m
 		}
 	}
-	return m.whereMode(condition, WhereIs)
+	return m.whereMode(condition, types.WhereIs)
 }
 
 func (m *Model) WhereIs(key string, value any) types.ORMModel {
@@ -49,7 +36,7 @@ func (m *Model) WhereLike(condition any, value ...any) types.ORMModel {
 			return m
 		}
 	}
-	return m.whereMode(condition, WhereLike)
+	return m.whereMode(condition, types.WhereLike)
 }
 
 func (m *Model) WhereNot(condition any, value ...any) types.ORMModel {
@@ -60,7 +47,7 @@ func (m *Model) WhereNot(condition any, value ...any) types.ORMModel {
 			return m
 		}
 	}
-	return m.whereMode(condition, WhereNot)
+	return m.whereMode(condition, types.WhereNot)
 }
 
 func (m *Model) WhereGt(condition any, value ...any) types.ORMModel {
@@ -71,7 +58,7 @@ func (m *Model) WhereGt(condition any, value ...any) types.ORMModel {
 			return m
 		}
 	}
-	return m.whereMode(condition, WhereGt)
+	return m.whereMode(condition, types.WhereGt)
 }
 
 func (m *Model) WhereLt(condition any, value ...any) types.ORMModel {
@@ -82,7 +69,7 @@ func (m *Model) WhereLt(condition any, value ...any) types.ORMModel {
 			return m
 		}
 	}
-	return m.whereMode(condition, WhereLt)
+	return m.whereMode(condition, types.WhereLt)
 }
 
 func (m *Model) WhereGte(condition any, value ...any) types.ORMModel {
@@ -93,7 +80,7 @@ func (m *Model) WhereGte(condition any, value ...any) types.ORMModel {
 			return m
 		}
 	}
-	return m.whereMode(condition, WhereGte)
+	return m.whereMode(condition, types.WhereGte)
 }
 
 func (m *Model) WhereLte(condition any, value ...any) types.ORMModel {
@@ -104,7 +91,7 @@ func (m *Model) WhereLte(condition any, value ...any) types.ORMModel {
 			return m
 		}
 	}
-	return m.whereMode(condition, WhereLte)
+	return m.whereMode(condition, types.WhereLte)
 }
 
 func (m *Model) WhereOr(condition any, value ...any) types.ORMModel {
@@ -115,7 +102,7 @@ func (m *Model) WhereOr(condition any, value ...any) types.ORMModel {
 			return m
 		}
 	}
-	return m.whereMode(condition, WhereOr)
+	return m.whereMode(condition, types.WhereOr)
 }
 
 // 限制查询的数量
@@ -137,7 +124,7 @@ func (m *Model) Asc(condition any) types.ORMModel {
 		m.OpList.Store(fmt.Sprintf("asc %s", key), "")
 		return m
 	}
-	return m.whereMode(condition, OrderAsc)
+	return m.whereMode(condition, types.OrderAsc)
 }
 
 // 逆序
@@ -147,9 +134,9 @@ func (m *Model) Desc(condition any) types.ORMModel {
 		m.OpList.Store(fmt.Sprintf("desc %s", key), "")
 		return m
 	}
-	return m.whereMode(condition, OrderDesc)
+	return m.whereMode(condition, types.OrderDesc)
 }
-func (m *Model) whereMode(condition any, mode int) types.ORMModel {
+func (m *Model) whereMode(condition any, mode types.WhereMode) types.ORMModel {
 	t := reflect.ValueOf(condition)
 	if t.Kind() == reflect.Pointer {
 		if t.IsNil() {
@@ -184,59 +171,15 @@ func (m *Model) whereMode(condition any, mode int) types.ORMModel {
 				if ok {
 					for _, v2 := range strings.Split(v, ";") {
 						if strings.HasPrefix(v2, "column:") {
-							switch mode {
-							case WhereIs:
-								column := strings.TrimPrefix(v2, "column:")
-								value := field.Interface()
-								m.upsertOp.Store(column, value)
-								m.OpList.Store(fmt.Sprintf("where %s = ?", column), value)
-							case WhereNot:
-								m.OpList.Store(fmt.Sprintf("not %s = ?", strings.TrimPrefix(v2, "column:")), field.Interface())
-							case WhereGt:
-								m.OpList.Store(fmt.Sprintf("where %s > ?", strings.TrimPrefix(v2, "column:")), field.Interface())
-							case WhereLt:
-								m.OpList.Store(fmt.Sprintf("where %s < ?", strings.TrimPrefix(v2, "column:")), field.Interface())
-							case WhereOr:
-								m.OpList.Store(fmt.Sprintf("or %s = ?", strings.TrimPrefix(v2, "column:")), field.Interface())
-							case OrderAsc:
-								m.OpList.Store(fmt.Sprintf("asc %s", strings.TrimPrefix(v2, "column:")), "")
-							case OrderDesc:
-								m.OpList.Store(fmt.Sprintf("desc %s", strings.TrimPrefix(v2, "column:")), "")
-							case WhereGte:
-								m.OpList.Store(fmt.Sprintf("where %s >= ?", strings.TrimPrefix(v2, "column:")), field.Interface())
-							case WhereLte:
-								m.OpList.Store(fmt.Sprintf("where %s <= ?", strings.TrimPrefix(v2, "column:")), field.Interface())
-							case WhereLike:
-								m.OpList.Store(fmt.Sprintf("where %s like ?", strings.TrimPrefix(v2, "column:")), "%"+fmt.Sprint(field.Interface())+"%")
-							}
+							column := strings.TrimPrefix(v2, "column:")
+							value := field.Interface()
+							m.saveOplist(mode, column, value)
 							continue l1
 						} else if !strings.Contains(v2, ":") {
 							// 直接输入字段信息的情况
-							switch mode {
-							case WhereIs:
-								column := v2
-								value := field.Interface()
-								m.upsertOp.Store(column, value)
-								m.OpList.Store(fmt.Sprintf("where %s = ?", column), value)
-							case WhereNot:
-								m.OpList.Store(fmt.Sprintf("not %s = ?", v2), field.Interface())
-							case WhereGt:
-								m.OpList.Store(fmt.Sprintf("where %s > ?", v2), field.Interface())
-							case WhereLt:
-								m.OpList.Store(fmt.Sprintf("where %s < ?", v2), field.Interface())
-							case WhereOr:
-								m.OpList.Store(fmt.Sprintf("or %s = ?", v2), field.Interface())
-							case OrderAsc:
-								m.OpList.Store(fmt.Sprintf("asc %s", v2), "")
-							case OrderDesc:
-								m.OpList.Store(fmt.Sprintf("desc %s", v2), "")
-							case WhereGte:
-								m.OpList.Store(fmt.Sprintf("where %s >= ?", v2), field.Interface())
-							case WhereLte:
-								m.OpList.Store(fmt.Sprintf("where %s <= ?", v2), field.Interface())
-							case WhereLike:
-								m.OpList.Store(fmt.Sprintf("where %s like ?", v2), "%"+fmt.Sprint(field.Interface())+"%")
-							}
+							column := v2
+							value := field.Interface()
+							m.saveOplist(mode, column, value)
 							continue l1
 						}
 					}
@@ -246,7 +189,14 @@ func (m *Model) whereMode(condition any, mode int) types.ORMModel {
 
 		// 开始处理当前结构体的字段
 		processStructFields(t, t.Type())
+	case reflect.Map:
+		// 遍历map
+		for _, k := range t.MapKeys() {
+			v := t.MapIndex(k)
+			m.saveOplist(mode, k.String(), v.Interface())
+		}
 	}
+
 	return m
 }
 
@@ -337,4 +287,30 @@ func (m *Model) getID(condition any) (id string) {
 		}
 	}
 	return
+}
+
+func (m *Model) saveOplist(mode types.WhereMode, column string, value any) {
+	switch mode {
+	case types.WhereIs:
+		m.upsertOp.Store(column, value)
+		m.OpList.Store(fmt.Sprintf("where %s = ?", column), value)
+	case types.WhereNot:
+		m.OpList.Store(fmt.Sprintf("not %s = ?", column), value)
+	case types.WhereGt:
+		m.OpList.Store(fmt.Sprintf("where %s > ?", column), value)
+	case types.WhereLt:
+		m.OpList.Store(fmt.Sprintf("where %s < ?", column), value)
+	case types.WhereOr:
+		m.OpList.Store(fmt.Sprintf("or %s = ?", column), value)
+	case types.OrderAsc:
+		m.OpList.Store(fmt.Sprintf("asc %s", column), "")
+	case types.OrderDesc:
+		m.OpList.Store(fmt.Sprintf("desc %s", column), "")
+	case types.WhereGte:
+		m.OpList.Store(fmt.Sprintf("where %s >= ?", column), value)
+	case types.WhereLte:
+		m.OpList.Store(fmt.Sprintf("where %s <= ?", column), value)
+	case types.WhereLike:
+		m.OpList.Store(fmt.Sprintf("where %s like ?", column), "%"+fmt.Sprint(value)+"%")
+	}
 }

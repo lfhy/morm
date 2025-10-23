@@ -40,7 +40,7 @@ func (m *Model) Save(data any, value ...any) (err error) {
 		return m.Update(data, value...)
 	} else {
 		// 组合新数据
-		m.whereMode(data, WhereIs)
+		m.whereMode(data, types.WhereIs)
 		newData := make(map[string]any)
 		m.upsertOp.Range(func(key, value any) bool {
 			newData[key.(string)] = value

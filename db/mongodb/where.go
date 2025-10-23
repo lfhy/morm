@@ -13,19 +13,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-const (
-	WhereIs = iota
-	WhereNot
-	WhereGt
-	WhereLt
-	WhereOr
-	OrderAsc
-	OrderDesc
-	WhereGte
-	WhereLte
-	WhereLike
-)
-
 // 限制条件
 func (m *Model) Where(condition any, value ...any) types.ORMModel {
 	if len(value) > 0 {
@@ -35,7 +22,7 @@ func (m *Model) Where(condition any, value ...any) types.ORMModel {
 			return m
 		}
 	}
-	return m.whereMode(condition, WhereIs)
+	return m.whereMode(condition, types.WhereIs)
 }
 
 func (m *Model) WhereIs(key string, value any) types.ORMModel {
@@ -51,7 +38,7 @@ func (m *Model) WhereLike(condition any, value ...any) types.ORMModel {
 			return m
 		}
 	}
-	return m.whereMode(condition, WhereLike)
+	return m.whereMode(condition, types.WhereLike)
 }
 
 func (m *Model) WhereNot(condition any, value ...any) types.ORMModel {
@@ -62,7 +49,7 @@ func (m *Model) WhereNot(condition any, value ...any) types.ORMModel {
 			return m
 		}
 	}
-	return m.whereMode(condition, WhereNot)
+	return m.whereMode(condition, types.WhereNot)
 }
 
 func (m *Model) WhereGt(condition any, value ...any) types.ORMModel {
@@ -73,7 +60,7 @@ func (m *Model) WhereGt(condition any, value ...any) types.ORMModel {
 			return m
 		}
 	}
-	return m.whereMode(condition, WhereGt)
+	return m.whereMode(condition, types.WhereGt)
 }
 
 func (m *Model) WhereLt(condition any, value ...any) types.ORMModel {
@@ -84,7 +71,7 @@ func (m *Model) WhereLt(condition any, value ...any) types.ORMModel {
 			return m
 		}
 	}
-	return m.whereMode(condition, WhereLt)
+	return m.whereMode(condition, types.WhereLt)
 }
 
 func (m *Model) WhereGte(condition any, value ...any) types.ORMModel {
@@ -95,7 +82,7 @@ func (m *Model) WhereGte(condition any, value ...any) types.ORMModel {
 			return m
 		}
 	}
-	return m.whereMode(condition, WhereGte)
+	return m.whereMode(condition, types.WhereGte)
 }
 
 func (m *Model) WhereLte(condition any, value ...any) types.ORMModel {
@@ -106,7 +93,7 @@ func (m *Model) WhereLte(condition any, value ...any) types.ORMModel {
 			return m
 		}
 	}
-	return m.whereMode(condition, WhereLte)
+	return m.whereMode(condition, types.WhereLte)
 }
 
 func (m *Model) WhereOr(condition any, value ...any) types.ORMModel {
@@ -117,7 +104,7 @@ func (m *Model) WhereOr(condition any, value ...any) types.ORMModel {
 			return m
 		}
 	}
-	return m.whereMode(condition, WhereOr)
+	return m.whereMode(condition, types.WhereOr)
 }
 
 // 限制查询的数量
@@ -146,7 +133,7 @@ func (m *Model) Asc(condition any) types.ORMModel {
 		}
 		return m
 	}
-	return m.whereMode(condition, OrderAsc)
+	return m.whereMode(condition, types.OrderAsc)
 }
 
 // 逆序
@@ -163,10 +150,10 @@ func (m *Model) Desc(condition any) types.ORMModel {
 		}
 		return m
 	}
-	return m.whereMode(condition, OrderDesc)
+	return m.whereMode(condition, types.OrderDesc)
 }
 
-func (m *Model) whereMode(condition any, mode int) types.ORMModel {
+func (m *Model) whereMode(condition any, mode types.WhereMode) types.ORMModel {
 	t := reflect.ValueOf(condition)
 	if t.Kind() == reflect.Ptr {
 		if t.IsNil() {
@@ -202,60 +189,21 @@ func (m *Model) whereMode(condition any, mode int) types.ORMModel {
 				}
 				v, ok := fieldType.Tag.Lookup("bson")
 				if ok {
-					switch mode {
-					case WhereIs:
-						if v == "_id" {
-							m.WhereList[v] = field.Interface()
-							continue
-						}
-						m.WhereList[v] = bson.M{"$eq": field.Interface()}
-					case WhereNot:
-						if v == "_id" {
-							ids, err := primitive.ObjectIDFromHex(field.Interface().(string))
-							if err != nil {
-								log.Error(err)
-							}
-							m.WhereList[v] = bson.M{"$ne": ids}
-							continue
-						}
-						m.WhereList[v] = bson.M{"$ne": field.Interface()}
-					case WhereGt:
-						m.WhereList[v] = bson.M{"$gt": field.Interface()}
-					case WhereLt:
-						m.WhereList[v] = bson.M{"$lt": field.Interface()}
-					case WhereGte:
-						m.WhereList[v] = bson.M{"$gte": field.Interface()}
-					case WhereLte:
-						m.WhereList[v] = bson.M{"$lte": field.Interface()}
-					case WhereOr:
-						m.WhereList[v] = bson.M{"$or": field.Interface()}
-					case OrderAsc:
-						data, ok := m.OpList.Load("sort")
-						if !ok {
-							m.OpList.Store("sort", bson.D{{Key: v, Value: 1}})
-						} else {
-							sort := data.(bson.D)
-							sort = append(sort, bson.E{Key: v, Value: 1})
-							m.OpList.Store("asc", sort)
-						}
-					case OrderDesc:
-						data, ok := m.OpList.Load("sort")
-						if !ok {
-							m.OpList.Store("sort", bson.D{{Key: v, Value: -1}})
-						} else {
-							sort := data.(bson.D)
-							sort = append(sort, bson.E{Key: v, Value: -1})
-							m.OpList.Store("sort", sort)
-						}
-					case WhereLike:
-						m.WhereList[v] = bson.M{"$regex": primitive.Regex{Pattern: fmt.Sprint(field.Interface()), Options: "i"}}
-					}
+					value := field.Interface()
+					m.saveOplist(mode, v, value)
+					continue
 				}
 			}
 		}
 
 		// 处理当前结构体的字段
 		processStructFields(t, t.Type())
+	case reflect.Map:
+		// 遍历map
+		for _, k := range t.MapKeys() {
+			v := t.MapIndex(k)
+			m.saveOplist(mode, k.String(), v.Interface())
+		}
 	}
 	return m
 }
@@ -401,5 +349,56 @@ func handleStruct(val reflect.Value, value string) {
 				return // 找到即停止
 			}
 		}
+	}
+}
+
+func (m *Model) saveOplist(mode types.WhereMode, column string, value any) {
+	switch mode {
+	case types.WhereIs:
+		if column == "_id" {
+			m.WhereList[column] = value
+			return
+		}
+		m.WhereList[column] = bson.M{"$eq": value}
+	case types.WhereNot:
+		if column == "_id" {
+			ids, err := primitive.ObjectIDFromHex(fmt.Sprint(value))
+			if err != nil {
+				log.Error(err)
+			}
+			m.WhereList[column] = bson.M{"$ne": ids}
+			return
+		}
+		m.WhereList[column] = bson.M{"$ne": value}
+	case types.WhereGt:
+		m.WhereList[column] = bson.M{"$gt": value}
+	case types.WhereLt:
+		m.WhereList[column] = bson.M{"$lt": value}
+	case types.WhereGte:
+		m.WhereList[column] = bson.M{"$gte": value}
+	case types.WhereLte:
+		m.WhereList[column] = bson.M{"$lte": value}
+	case types.WhereOr:
+		m.WhereList[column] = bson.M{"$or": value}
+	case types.OrderAsc:
+		data, ok := m.OpList.Load("sort")
+		if !ok {
+			m.OpList.Store("sort", bson.D{{Key: column, Value: 1}})
+		} else {
+			sort := data.(bson.D)
+			sort = append(sort, bson.E{Key: column, Value: 1})
+			m.OpList.Store("asc", sort)
+		}
+	case types.OrderDesc:
+		data, ok := m.OpList.Load("sort")
+		if !ok {
+			m.OpList.Store("sort", bson.D{{Key: column, Value: -1}})
+		} else {
+			sort := data.(bson.D)
+			sort = append(sort, bson.E{Key: column, Value: -1})
+			m.OpList.Store("sort", sort)
+		}
+	case types.WhereLike:
+		m.WhereList[column] = bson.M{"$regex": primitive.Regex{Pattern: fmt.Sprint(value), Options: "i"}}
 	}
 }
