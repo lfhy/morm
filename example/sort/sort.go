@@ -92,4 +92,9 @@ func main() {
 	for _, data := range createdesc {
 		fmt.Printf("查询结果:%+v\n", data)
 	}
+	fmt.Println("查询CreateTime升序数据")
+	db.M().Where(&DBSturct{IsDelete: 1}).Page(1, 3).Asc("create_time").All(&createasc)
+	for _, data := range createasc {
+		fmt.Printf("查询结果:%+v\n", data)
+	}
 }
