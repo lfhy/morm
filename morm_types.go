@@ -9,8 +9,8 @@ import (
 type BoolORM = types.BoolORM
 
 const (
-	TrueInt  BoolORM = 1
-	FalseInt BoolORM = -1
+	BoolORMTrue  BoolORM = 1
+	BoolORMFalse BoolORM = -1
 	// 空字符串
 	EmptyStr = "-"
 )
