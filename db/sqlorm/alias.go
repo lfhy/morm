@@ -2,7 +2,7 @@ package sqlorm
 
 import "github.com/lfhy/morm/types"
 
-func (m *Model) Equel(key any, value ...any) types.ORMModel {
+func (m *Model) Equal(key any, value ...any) types.ORMModel {
 	return m.Where(key, value...)
 }
 

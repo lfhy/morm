@@ -93,8 +93,8 @@ type ORMModel interface {
 	// Where("ID",123) 也会生成 WHERE User.ID = 123
 	Where(condition any, value ...any) ORMModel
 
-	// Equel等同Where
-	Equel(key any, value ...any) ORMModel
+	// Equal等同Where
+	Equal(key any, value ...any) ORMModel
 
 	// WhereIs传入 key和value 根据生成表达式
 	// WhereIs允许用户直接操作gorm或者mongo的opList
