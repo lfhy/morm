@@ -1,6 +1,9 @@
 package conf
 
-import "github.com/spf13/viper"
+import (
+	"github.com/lfhy/morm/types"
+	"github.com/spf13/viper"
+)
 
 // DBConfig 是数据库总配置结构体
 type DBConfig struct {
@@ -20,7 +23,7 @@ type LogConfig struct {
 	// 日志文件路径
 	Log string `mapstructure:"db.log"`
 	// 日志等级
-	LogLevel string `mapstructure:"db.loglevel"`
+	LogLevel types.LogLevel `mapstructure:"db.loglevel"`
 }
 
 func (l *LogConfig) Init() {
@@ -30,7 +33,7 @@ func (l *LogConfig) Init() {
 	if l.Log != "" {
 		config.Set("db.log", l.Log)
 	}
-	if l.LogLevel != "" {
+	if l.LogLevel != 0 {
 		config.Set("db.loglevel", l.LogLevel)
 	}
 }

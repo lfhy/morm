@@ -102,5 +102,17 @@ func (c *Cursor) Next() bool {
 }
 
 func (c *Cursor) Close() error {
-	return c.Cursor.Close(c.ctx)
+	err := c.Cursor.Close(c.ctx)
+	if err != nil {
+		log.Errorf("Mongo游标关闭出错: %v\n", err)
+	}
+	return err
+}
+
+func (c *Cursor) Decode(v any) error {
+	err := c.Cursor.Decode(v)
+	if err != nil {
+		log.Errorf("Mongo游标解码出错: %v\n", err)
+	}
+	return err
 }

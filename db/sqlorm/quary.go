@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"sync"
 
+	"github.com/lfhy/morm/log"
+
 	"github.com/lfhy/morm/types"
 	"gorm.io/gorm"
 )
@@ -35,6 +37,7 @@ func (q *Quary) Delete() error {
 func (q *Quary) Cursor() (types.Cursor, error) {
 	rows, err := q.m.makeQuary().Rows()
 	if err != nil {
+		log.Errorf("Mysql查出错: %v\n", err)
 		return nil, err
 	}
 	return &Cursor{Rows: rows, db: q.m.getDB()}, nil
@@ -46,5 +49,9 @@ type Cursor struct {
 }
 
 func (c *Cursor) Decode(v any) error {
-	return c.db.ScanRows(c.Rows, v)
+	err := c.db.ScanRows(c.Rows, v)
+	if err != nil {
+		log.Errorf("Mysql游标解码出错: %v\n", err)
+	}
+	return err
 }

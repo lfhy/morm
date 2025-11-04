@@ -38,3 +38,12 @@ type MongoDBConfig = conf.MongoDBConfig
 type Session = types.Session
 
 type ListOption = types.ListOption
+
+type LogLevel = types.LogLevel
+
+const (
+	LogLevelSilent LogLevel = iota + 1
+	LogLevelError
+	LogLevelWarn
+	LogLevelInfo
+)

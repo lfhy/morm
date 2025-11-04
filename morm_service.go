@@ -1,6 +1,9 @@
 package morm
 
-import "github.com/lfhy/morm/types"
+import (
+	"github.com/lfhy/morm/log"
+	"github.com/lfhy/morm/types"
+)
 
 type BaseModel interface {
 	M() Model
@@ -24,12 +27,14 @@ func List[T BaseModel](base T, ctx *ListOption, where func(m Model), listFn func
 	}
 	cur, err := model.Cursor()
 	if err != nil {
+		log.Errorf("Cursor Error:%v", err)
 		return total
 	}
 	defer cur.Close()
 	for cur.Next() {
 		var base T
 		if err := cur.Decode(&base); err != nil {
+			log.Errorf("Decode Error:%v", err)
 			continue
 		}
 		if !listFn(base) {
@@ -72,6 +77,7 @@ func Delete(baseModel BaseModel, where func(m Model)) error {
 func Create(baseModel BaseModel) error {
 	data := types.DeepCopy(baseModel)
 	_, err := baseModel.M().Create(data)
+	log.Errorf("Create Error:%v", err)
 	return err
 }
 

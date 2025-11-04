@@ -26,7 +26,7 @@ func main() {
 		Type: "sqlite",
 		LogConfig: &conf.LogConfig{
 			Log:      "./db.log",
-			LogLevel: "4",
+			LogLevel: morm.LogLevelInfo,
 		},
 		SQLiteConfig: &conf.SQLiteConfig{
 			AutoCreateTable: true,
