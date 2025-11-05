@@ -102,7 +102,7 @@ func main() {
 	morm.List(&Task{},
 		&morm.ListOption{
 			Page: 1, Limit: 10,
-			Sort: []morm.Sort{
+			Sorts: []*morm.Sort{
 				{Key: "status", Mode: morm.Asc},      // 优先处理 status < 2 的任务
 				{Key: "priority", Mode: morm.Desc},   // 优先级高的排前面
 				{Key: "deadline", Mode: morm.Asc},    // 截止时间早的排前面

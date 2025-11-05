@@ -73,11 +73,11 @@ func main() {
 	morm.List(&db,
 		&morm.ListOption{
 			Page: 1, Limit: 3,
-			Sort: []morm.Sort{{
+			Sort: &morm.Sort{
 				Key:  &SortDBStruct{ID: 1},
 				Mode: morm.Asc,
 			},
-			}},
+		},
 		func(m morm.Model) {
 			m.Where(&DBSturct{
 				IsDelete: 1,
@@ -90,11 +90,11 @@ func main() {
 	morm.List(&db,
 		&morm.ListOption{
 			Page: 1, Limit: 3,
-			Sort: []morm.Sort{{
+			Sort: &morm.Sort{
 				Key:  &SortDBStruct{ID: 1},
 				Mode: morm.Desc,
 			},
-			}},
+		},
 		func(m morm.Model) {
 			m.Where(&DBSturct{
 				IsDelete: 1,
@@ -107,10 +107,9 @@ func main() {
 	morm.List(&db,
 		&morm.ListOption{
 			Page: 1, Limit: 3,
-			Sort: []morm.Sort{{
+			Sort: &morm.Sort{
 				Key:  &SortDBStruct{CreateTime: 1},
 				Mode: morm.Asc,
-			},
 			}},
 		func(m morm.Model) {
 			m.Where(&DBSturct{
@@ -124,11 +123,11 @@ func main() {
 	morm.List(&db,
 		&morm.ListOption{
 			Page: 1, Limit: 3,
-			Sort: []morm.Sort{{
+			Sort: &morm.Sort{
 				Key:  &SortDBStruct{CreateTime: 1},
 				Mode: morm.Desc,
 			},
-			}},
+		},
 		func(m morm.Model) {
 			m.Where(&DBSturct{
 				IsDelete: 1,
@@ -141,11 +140,11 @@ func main() {
 	morm.List(&db,
 		&morm.ListOption{
 			Page: 1, Limit: 3,
-			Sort: []morm.Sort{{
+			Sort: &morm.Sort{
 				Key:  "create_time",
 				Mode: morm.Asc,
 			},
-			}},
+		},
 		func(m morm.Model) {
 			m.Where(&DBSturct{
 				IsDelete: 1,

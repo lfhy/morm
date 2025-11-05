@@ -13,10 +13,11 @@ type Sort struct {
 }
 
 type ListOption struct {
-	Page  int  // 当前页
-	Limit int  // 页大小
-	All   bool // 获取所有
-	Sort  []Sort
+	Page  int     // 当前页
+	Limit int     // 页大小
+	All   bool    // 获取所有
+	Sort  *Sort   // 大多数情况只有一种查询
+	Sorts []*Sort // 复杂查询目前mongo不支持
 }
 
 var (

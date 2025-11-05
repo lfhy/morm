@@ -25,7 +25,16 @@ func List[T BaseModel](base T, ctx *ListOption, where func(m Model), listFn func
 	if !ctx.All {
 		model.Page(ctx.GetPage(), ctx.GetLimit())
 	}
-	for _, sort := range ctx.Sort {
+
+	if ctx.Sort != nil {
+		if ctx.Sort.Mode == types.OrderDirDesc {
+			model.Desc(ctx.Sort.Key)
+		} else {
+			model.Asc(ctx.Sort.Key)
+		}
+	}
+
+	for _, sort := range ctx.Sorts {
 		if sort.Mode == types.OrderDirDesc {
 			model.Desc(sort.Key)
 		} else {
