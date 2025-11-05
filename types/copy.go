@@ -5,6 +5,10 @@ import (
 	"time"
 )
 
+func Ptr[T any](src T) *T {
+	return &src
+}
+
 func DeepCopy[T any](src T) T {
 	dst := deepCopy(src)
 	return dst.(T)

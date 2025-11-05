@@ -86,7 +86,7 @@ func (m *Model) Update(data any, value ...any) error {
 
 // 查询数据
 func (m *Model) Find() types.ORMQuary {
-	return &Quary{m: m, OpList: &m.OpList}
+	return &Quary{m: m, OpList: m.OpList}
 }
 
 func (q *Model) One(data any) error {

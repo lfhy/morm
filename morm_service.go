@@ -25,6 +25,13 @@ func List[T BaseModel](base T, ctx *ListOption, where func(m Model), listFn func
 	if !ctx.All {
 		model.Page(ctx.GetPage(), ctx.GetLimit())
 	}
+	for _, sort := range ctx.Sort {
+		if sort.Mode == types.OrderDirDesc {
+			model.Desc(sort.Key)
+		} else {
+			model.Asc(sort.Key)
+		}
+	}
 	cur, err := model.Cursor()
 	if err != nil {
 		log.Errorf("Cursor Error:%v", err)

@@ -39,6 +39,22 @@ type Session = types.Session
 
 type ListOption = types.ListOption
 
+var (
+	ListOptionAll     = types.ListOptionAll
+	ListOptionDefault = types.ListOptionDefault
+)
+
+type Sort = types.Sort
+
+type OrderDir = types.OrderDir
+
+var (
+	OrderDirAsc  = types.OrderDirAsc
+	OrderDirDesc = types.OrderDirDesc
+	Asc          = types.OrderDirAsc
+	Desc         = types.OrderDirDesc
+)
+
 type LogLevel = types.LogLevel
 
 const (

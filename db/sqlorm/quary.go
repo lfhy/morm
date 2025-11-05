@@ -2,7 +2,6 @@ package sqlorm
 
 import (
 	"database/sql"
-	"sync"
 
 	"github.com/lfhy/morm/log"
 
@@ -12,7 +11,7 @@ import (
 
 type Quary struct {
 	m      *Model
-	OpList *sync.Map
+	OpList *types.OrderedMap
 }
 
 func (q *Quary) One(data any) error {
