@@ -3,6 +3,7 @@ package sqlorm
 import (
 	"fmt"
 	"reflect"
+	"sync"
 
 	"gorm.io/gorm"
 )
@@ -10,10 +11,11 @@ import (
 type DBConn struct {
 	*gorm.DB
 	AutoMigrate bool
+	migrateLock sync.RWMutex
 	migrateMap  map[string]bool
 }
 
-func (m DBConn) getDB() *gorm.DB {
+func (m *DBConn) getDB() *gorm.DB {
 	return m.DB
 }
 

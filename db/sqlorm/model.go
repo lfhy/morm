@@ -30,15 +30,26 @@ func (m *Model) getDB() *gorm.DB {
 
 var ORMConn *DBConn
 
+func (m *DBConn) migrate(data any) {
+	if m.migrateMap == nil {
+		m.migrateLock.Lock()
+		m.migrateMap = make(map[string]bool)
+		m.migrateLock.Unlock()
+	}
+	table := GetTableName(data)
+	m.migrateLock.RLock()
+	ok := m.migrateMap[table]
+	m.migrateLock.RUnlock()
+	if !ok {
+		m.migrateLock.Lock()
+		m.migrateMap[table] = true
+		m.migrateLock.Unlock()
+	}
+}
+
 func (m *DBConn) Model(data any) types.ORMModel {
 	if m.AutoMigrate {
-		if m.migrateMap == nil {
-			m.migrateMap = make(map[string]bool)
-		}
-		if _, ok := m.migrateMap[GetTableName(data)]; !ok {
-			m.migrateMap[GetTableName(data)] = true
-			m.getDB().AutoMigrate(data)
-		}
+		m.migrate(data)
 	}
 	return &Model{Data: data, OpList: types.NewOrderedMap(), tx: m, upsertOp: sync.Map{}}
 }
