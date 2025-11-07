@@ -42,6 +42,7 @@ func (m *DBConn) migrate(data any) {
 	m.migrateLock.RUnlock()
 	if !ok {
 		m.migrateLock.Lock()
+		m.Migrator().AutoMigrate(data)
 		m.migrateMap[table] = true
 		m.migrateLock.Unlock()
 	}
