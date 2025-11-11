@@ -9,32 +9,32 @@ import (
 	"gorm.io/gorm"
 )
 
-type Quary struct {
+type Query struct {
 	m      *Model
 	OpList *types.OrderedMap
 }
 
-func (q *Quary) One(data any) error {
-	return q.m.makeQuary().First(data).Error
+func (q *Query) One(data any) error {
+	return q.m.makeQuery().First(data).Error
 }
 
-func (q *Quary) All(data any) error {
-	return q.m.makeQuary().Find(data).Error
+func (q *Query) All(data any) error {
+	return q.m.makeQuery().Find(data).Error
 }
 
-func (q *Quary) Count() int64 {
+func (q *Query) Count() int64 {
 	var i int64
-	q.m.makeQuary().Count(&i)
+	q.m.makeQuery().Count(&i)
 	return i
 }
 
-func (q *Quary) Delete() error {
-	return q.m.makeQuary().Delete(q.m.Data).Error
+func (q *Query) Delete() error {
+	return q.m.makeQuery().Delete(q.m.Data).Error
 }
 
 // gorm不支持游标，使用原始SQL实现
-func (q *Quary) Cursor() (types.Cursor, error) {
-	rows, err := q.m.makeQuary().Rows()
+func (q *Query) Cursor() (types.Cursor, error) {
+	rows, err := q.m.makeQuery().Rows()
 	if err != nil {
 		log.Errorf("Mysql查出错: %v\n", err)
 		return nil, err

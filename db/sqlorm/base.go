@@ -24,7 +24,7 @@ func (m *Model) Insert(data any) (err error) {
 
 // 更新或插入数据
 func (m *Model) Save(data any, value ...any) (err error) {
-	q := m.makeQuary()
+	q := m.makeQuery()
 	if len(value) > 0 {
 		if col, ok := data.(string); ok {
 			q.Set(col, value[0])
@@ -67,7 +67,7 @@ func (m *Model) Delete(data ...any) error {
 	if len(data) > 0 && data[0] != nil {
 		m.Data = data[0]
 	}
-	return m.makeQuary().Delete(m.Data).Error
+	return m.makeQuery().Delete(m.Data).Error
 }
 
 // 修改
@@ -75,18 +75,18 @@ func (m *Model) Update(data any, value ...any) error {
 	if len(value) > 0 {
 		col, ok := data.(string)
 		if ok {
-			return m.makeQuary().Update(col, value[0]).Error
+			return m.makeQuery().Update(col, value[0]).Error
 		}
 	}
 	if data != nil {
 		m.Data = data
 	}
-	return m.makeQuary().Updates(m.Data).Error
+	return m.makeQuery().Updates(m.Data).Error
 }
 
 // 查询数据
-func (m *Model) Find() types.ORMQuary {
-	return &Quary{m: m, OpList: m.OpList}
+func (m *Model) Find() types.ORMQuery {
+	return &Query{m: m, OpList: m.OpList}
 }
 
 func (q *Model) One(data any) error {

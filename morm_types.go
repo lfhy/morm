@@ -21,7 +21,7 @@ type ORMModel = types.ORMModel
 
 type Model = types.ORMModel
 
-type ORMQuary = types.ORMQuary
+type ORMQuery = types.ORMQuery
 
 type BulkWriteOperation = types.BulkWriteOperation
 

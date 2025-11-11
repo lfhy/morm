@@ -11,13 +11,13 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type Quary struct {
+type Query struct {
 	m     *Model
 	Where bson.M
 }
 
-func (q *Quary) One(data any) error {
-	opts := q.m.makeOneQuary()
+func (q *Query) One(data any) error {
+	opts := q.m.makeOneQuery()
 	log.Debugf("查询集合 %v ,Mongo查询条件: %+v %+v", q.m.GetCollection(q.m.Data), q.m.WhereList, opts)
 	result := q.m.Tx.Client.Database(q.m.Tx.Database).Collection(q.m.GetCollection(q.m.Data)).FindOne(q.m.GetContext(), q.m.WhereList, &opts)
 	err := result.Decode(data)
@@ -31,8 +31,8 @@ func (q *Quary) One(data any) error {
 }
 
 // 查询全部
-func (q *Quary) All(data any) error {
-	opts := q.m.makeAllQuary()
+func (q *Query) All(data any) error {
+	opts := q.m.makeAllQuery()
 	log.Debugf("查询集合 %v Mongo查询条件: %v %v", q.m.GetCollection(q.m.Data), q.m.WhereList, opts)
 	log.Debugf("Mongo查询限制: %+v\n", opts)
 	result, err := q.m.Tx.Client.Database(q.m.Tx.Database).Collection(q.m.GetCollection(q.m.Data)).Find(q.m.GetContext(), q.m.WhereList, opts)
@@ -49,7 +49,7 @@ func (q *Quary) All(data any) error {
 	return err
 }
 
-func (q *Quary) Count() int64 {
+func (q *Query) Count() int64 {
 	i, _ := q.m.Tx.Client.Database(q.m.Tx.Database).Collection(q.m.GetCollection(q.m.Data)).CountDocuments(q.m.GetContext(), q.m.WhereList)
 	return i
 }
@@ -59,7 +59,7 @@ type IDModel struct {
 }
 
 // 删除查询结果
-func (q *Quary) Delete() error {
+func (q *Query) Delete() error {
 	var deleteIDs []*IDModel
 	err := q.All(&deleteIDs)
 	if err != nil {
@@ -77,8 +77,8 @@ func (q *Quary) Delete() error {
 }
 
 // 游标
-func (q *Quary) Cursor() (types.Cursor, error) {
-	opts := q.m.makeAllQuary()
+func (q *Query) Cursor() (types.Cursor, error) {
+	opts := q.m.makeAllQuery()
 	log.Debugf("查询集合 %v Mongo查询条件: %v %v", q.m.GetCollection(q.m.Data), q.m.WhereList, opts)
 	log.Debugf("Mongo查询限制: %+v\n", opts)
 	result, err := q.m.Tx.Client.Database(q.m.Tx.Database).Collection(q.m.GetCollection(q.m.Data)).Find(q.m.GetContext(), q.m.WhereList, opts)

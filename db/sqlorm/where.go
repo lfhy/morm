@@ -201,41 +201,41 @@ func (m *Model) whereMode(condition any, mode types.WhereMode) types.ORMModel {
 }
 
 // 自动生成查询条件
-func (m *Model) makeQuary() *gorm.DB {
-	quary := m.getDB().Model(m.Data)
+func (m *Model) makeQuery() *gorm.DB {
+	query := m.getDB().Model(m.Data)
 	m.OpList.Range(func(key string, value any) bool {
 		if strings.HasPrefix(key, "where ") {
-			quary = quary.Where(strings.TrimPrefix(key, "where "), value)
+			query = query.Where(strings.TrimPrefix(key, "where "), value)
 			return true
 		}
 		if strings.HasPrefix(key, "or ") {
-			quary = quary.Or(strings.TrimPrefix(key, "or "), value)
+			query = query.Or(strings.TrimPrefix(key, "or "), value)
 			return true
 		}
 		if strings.HasPrefix(key, "not ") {
-			quary = quary.Not(strings.TrimPrefix(key, "not "), value)
+			query = query.Not(strings.TrimPrefix(key, "not "), value)
 			return true
 		}
 		if strings.HasPrefix(key, "limit ") {
-			quary = quary.Limit(value.(int))
+			query = query.Limit(value.(int))
 			return true
 		}
 		if strings.HasPrefix(key, "offset ") {
-			quary = quary.Offset(value.(int))
+			query = query.Offset(value.(int))
 			return true
 		}
 		if strings.HasPrefix(key, "asc ") {
-			quary = quary.Order(fmt.Sprintf("%s ASC", strings.TrimPrefix(key, "asc ")))
+			query = query.Order(fmt.Sprintf("%s ASC", strings.TrimPrefix(key, "asc ")))
 			return true
 		}
 		if strings.HasPrefix(key, "desc ") {
-			quary = quary.Order(fmt.Sprintf("%s DESC", strings.TrimPrefix(key, "desc ")))
+			query = query.Order(fmt.Sprintf("%s DESC", strings.TrimPrefix(key, "desc ")))
 			return true
 		}
 		// fmt.Println(key, value)
 		return true
 	})
-	return quary
+	return query
 }
 
 func (m *Model) getID(condition any) (id string) {

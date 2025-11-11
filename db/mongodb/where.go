@@ -253,7 +253,7 @@ func (m *Model) CheckOID() {
 	}
 }
 
-func (m *Model) makeAllQuary() *options.FindOptions {
+func (m *Model) makeAllQuery() *options.FindOptions {
 	opts := options.Find()
 	m.OpList.Range(func(key, value any) bool {
 		if strings.Contains(key.(string), "limit") {
@@ -273,7 +273,7 @@ func (m *Model) makeAllQuary() *options.FindOptions {
 	return opts
 }
 
-func (m *Model) makeOneQuary() options.FindOneOptions {
+func (m *Model) makeOneQuery() options.FindOneOptions {
 	opts := options.FindOne()
 	m.OpList.Range(func(key, value any) bool {
 		if strings.Contains(key.(string), "offset") {

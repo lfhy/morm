@@ -86,7 +86,7 @@ type ORMModel interface {
 	// 查询数据
 	// 会根据限制条件生成查询函数
 	// 具体查询执行需要在查询函数中进行
-	Find() ORMQuary
+	Find() ORMQuery
 
 	// 过滤条件
 	// Where只能传入结构体
@@ -215,7 +215,7 @@ type ORMModel interface {
 	Cursor() (Cursor, error)
 }
 
-type ORMQuary interface {
+type ORMQuery interface {
 	// 查询匹配到的一条数据
 	One(data any) error
 	// 查询全部数据

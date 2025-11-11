@@ -435,9 +435,9 @@ func (m *Model) Update(data any, value ...any) error {
 }
 
 // 查询数据
-func (m *Model) Find() types.ORMQuary {
+func (m *Model) Find() types.ORMQuery {
 	m.CheckOID()
-	return &Quary{m: m, Where: m.WhereList}
+	return &Query{m: m, Where: m.WhereList}
 }
 
 func (m *Model) One(data any) error {
