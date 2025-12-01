@@ -43,6 +43,7 @@ func initConfig() (err error) {
 	}
 	configInitOnce.Do(func() {
 		err = conf.InitConfig(configFile)
+		log.InitDBLoger()
 	})
 	return err
 }

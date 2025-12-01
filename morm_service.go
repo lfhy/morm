@@ -93,7 +93,9 @@ func Delete(baseModel BaseModel, where func(m Model)) error {
 func Create(baseModel BaseModel) error {
 	data := types.DeepCopy(baseModel)
 	_, err := baseModel.M().Create(data)
-	log.Errorf("Create Error:%v", err)
+	if err != nil {
+		log.Errorf("Create Error:%v", err)
+	}
 	return err
 }
 
