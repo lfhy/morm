@@ -50,7 +50,11 @@ func (q *Query) All(data any) error {
 }
 
 func (q *Query) Count() int64 {
-	i, _ := q.m.Tx.Client.Database(q.m.Tx.Database).Collection(q.m.GetCollection(q.m.Data)).CountDocuments(q.m.GetContext(), q.m.WhereList)
+	log.Debugf("查询集合 %v ,Mongo查询条件: %+v", q.m.GetCollection(q.m.Data), q.m.WhereList)
+	i, err := q.m.Tx.Client.Database(q.m.Tx.Database).Collection(q.m.GetCollection(q.m.Data)).CountDocuments(q.m.GetContext(), q.m.WhereList)
+	if err != nil {
+		log.Errorf("Mongo查出错: %v\n", err)
+	}
 	return i
 }
 

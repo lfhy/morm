@@ -34,7 +34,24 @@ func (m *Model) WhereLike(condition any, value ...any) types.ORMModel {
 	if len(value) > 0 {
 		key, ok := condition.(string)
 		if ok {
-			m.WhereList[key] = bson.M{"$regex": value[0]}
+			// 获取现有的 $or 数组或创建一个新的
+			var orArray bson.A
+			if existingOr, exists := m.WhereList["$or"]; exists {
+				orArray = existingOr.(bson.A)
+			} else {
+				orArray = bson.A{}
+			}
+			
+			// 添加新条件到 $or 数组
+			newCondition := bson.M{key: bson.M{"$regex": value[0]}}
+			orArray = append(orArray, newCondition)
+			
+			// 更新 WhereList
+			m.WhereList["$or"] = orArray
+			
+			// 移除可能存在的同名字段条件，避免冲突
+			delete(m.WhereList, key)
+			
 			return m
 		}
 	}
@@ -355,29 +372,113 @@ func handleStruct(val reflect.Value, value string) {
 func (m *Model) saveOplist(mode types.WhereMode, column string, value any) {
 	switch mode {
 	case types.WhereIs:
-		if column == "_id" {
-			m.WhereList[column] = value
-			return
+		// 获取现有的 $or 数组或创建一个新的
+		var orArray bson.A
+		if existingOr, exists := m.WhereList["$or"]; exists {
+			orArray = existingOr.(bson.A)
+		} else {
+			orArray = bson.A{}
 		}
-		m.WhereList[column] = bson.M{"$eq": value}
+		
+		// 添加新条件到 $or 数组
+		newCondition := bson.M{column: bson.M{"$eq": value}}
+		orArray = append(orArray, newCondition)
+		
+		// 更新 WhereList
+		m.WhereList["$or"] = orArray
+		
+		// 移除可能存在的同名字段条件，避免冲突
+		delete(m.WhereList, column)
 	case types.WhereNot:
-		if column == "_id" {
-			ids, err := primitive.ObjectIDFromHex(fmt.Sprint(value))
-			if err != nil {
-				log.Error(err)
-			}
-			m.WhereList[column] = bson.M{"$ne": ids}
-			return
+		// 获取现有的 $or 数组或创建一个新的
+		var orArray bson.A
+		if existingOr, exists := m.WhereList["$or"]; exists {
+			orArray = existingOr.(bson.A)
+		} else {
+			orArray = bson.A{}
 		}
-		m.WhereList[column] = bson.M{"$ne": value}
+		
+		// 添加新条件到 $or 数组
+		newCondition := bson.M{column: bson.M{"$ne": value}}
+		orArray = append(orArray, newCondition)
+		
+		// 更新 WhereList
+		m.WhereList["$or"] = orArray
+		
+		// 移除可能存在的同名字段条件，避免冲突
+		delete(m.WhereList, column)
 	case types.WhereGt:
-		m.WhereList[column] = bson.M{"$gt": value}
+		// 获取现有的 $or 数组或创建一个新的
+		var orArray bson.A
+		if existingOr, exists := m.WhereList["$or"]; exists {
+			orArray = existingOr.(bson.A)
+		} else {
+			orArray = bson.A{}
+		}
+		
+		// 添加新条件到 $or 数组
+		newCondition := bson.M{column: bson.M{"$gt": value}}
+		orArray = append(orArray, newCondition)
+		
+		// 更新 WhereList
+		m.WhereList["$or"] = orArray
+		
+		// 移除可能存在的同名字段条件，避免冲突
+		delete(m.WhereList, column)
 	case types.WhereLt:
-		m.WhereList[column] = bson.M{"$lt": value}
+		// 获取现有的 $or 数组或创建一个新的
+		var orArray bson.A
+		if existingOr, exists := m.WhereList["$or"]; exists {
+			orArray = existingOr.(bson.A)
+		} else {
+			orArray = bson.A{}
+		}
+		
+		// 添加新条件到 $or 数组
+		newCondition := bson.M{column: bson.M{"$lt": value}}
+		orArray = append(orArray, newCondition)
+		
+		// 更新 WhereList
+		m.WhereList["$or"] = orArray
+		
+		// 移除可能存在的同名字段条件，避免冲突
+		delete(m.WhereList, column)
 	case types.WhereGte:
-		m.WhereList[column] = bson.M{"$gte": value}
+		// 获取现有的 $or 数组或创建一个新的
+		var orArray bson.A
+		if existingOr, exists := m.WhereList["$or"]; exists {
+			orArray = existingOr.(bson.A)
+		} else {
+			orArray = bson.A{}
+		}
+		
+		// 添加新条件到 $or 数组
+		newCondition := bson.M{column: bson.M{"$gte": value}}
+		orArray = append(orArray, newCondition)
+		
+		// 更新 WhereList
+		m.WhereList["$or"] = orArray
+		
+		// 移除可能存在的同名字段条件，避免冲突
+		delete(m.WhereList, column)
 	case types.WhereLte:
-		m.WhereList[column] = bson.M{"$lte": value}
+		// 获取现有的 $or 数组或创建一个新的
+		var orArray bson.A
+		if existingOr, exists := m.WhereList["$or"]; exists {
+			orArray = existingOr.(bson.A)
+		} else {
+			orArray = bson.A{}
+		}
+		
+		// 添加新条件到 $or 数组
+		newCondition := bson.M{column: bson.M{"$lte": value}}
+		orArray = append(orArray, newCondition)
+		
+		// 更新 WhereList
+		m.WhereList["$or"] = orArray
+		
+		// 移除可能存在的同名字段条件，避免冲突
+		delete(m.WhereList, column)
 	case types.WhereOr:
 		m.WhereList[column] = bson.M{"$or": value}
 	case types.OrderAsc:
@@ -399,6 +500,22 @@ func (m *Model) saveOplist(mode types.WhereMode, column string, value any) {
 			m.OpList.Store("sort", sort)
 		}
 	case types.WhereLike:
-		m.WhereList[column] = bson.M{"$regex": primitive.Regex{Pattern: fmt.Sprint(value), Options: "i"}}
+		// 获取现有的 $or 数组或创建一个新的
+		var orArray bson.A
+		if existingOr, exists := m.WhereList["$or"]; exists {
+			orArray = existingOr.(bson.A)
+		} else {
+			orArray = bson.A{}
+		}
+		
+		// 添加新条件到 $or 数组
+		newCondition := bson.M{column: bson.M{"$regex": primitive.Regex{Pattern: fmt.Sprint(value), Options: "i"}}}
+		orArray = append(orArray, newCondition)
+		
+		// 更新 WhereList
+		m.WhereList["$or"] = orArray
+		
+		// 移除可能存在的同名字段条件，避免冲突
+		delete(m.WhereList, column)
 	}
 }
