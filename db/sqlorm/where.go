@@ -293,24 +293,24 @@ func (m *Model) saveOplist(mode types.WhereMode, column string, value any) {
 	switch mode {
 	case types.WhereIs:
 		m.upsertOp.Store(column, value)
-		m.OpList.Store(fmt.Sprintf("where %s = ?", column), value)
+		m.OpList.Store(fmt.Sprintf("where `%s` = ?", column), value)
 	case types.WhereNot:
-		m.OpList.Store(fmt.Sprintf("not %s = ?", column), value)
+		m.OpList.Store(fmt.Sprintf("not `%s` = ?", column), value)
 	case types.WhereGt:
-		m.OpList.Store(fmt.Sprintf("where %s > ?", column), value)
+		m.OpList.Store(fmt.Sprintf("where `%s` > ?", column), value)
 	case types.WhereLt:
-		m.OpList.Store(fmt.Sprintf("where %s < ?", column), value)
+		m.OpList.Store(fmt.Sprintf("where `%s` < ?", column), value)
 	case types.WhereOr:
-		m.OpList.Store(fmt.Sprintf("or %s = ?", column), value)
+		m.OpList.Store(fmt.Sprintf("or `%s` = ?", column), value)
 	case types.OrderAsc:
-		m.OpList.Store(fmt.Sprintf("asc %s", column), "")
+		m.OpList.Store(fmt.Sprintf("asc `%s`", column), "")
 	case types.OrderDesc:
-		m.OpList.Store(fmt.Sprintf("desc %s", column), "")
+		m.OpList.Store(fmt.Sprintf("desc `%s`", column), "")
 	case types.WhereGte:
-		m.OpList.Store(fmt.Sprintf("where %s >= ?", column), value)
+		m.OpList.Store(fmt.Sprintf("where `%s` >= ?", column), value)
 	case types.WhereLte:
-		m.OpList.Store(fmt.Sprintf("where %s <= ?", column), value)
+		m.OpList.Store(fmt.Sprintf("where `%s` <= ?", column), value)
 	case types.WhereLike:
-		m.OpList.Store(fmt.Sprintf("where %s like ?", column), "%"+fmt.Sprint(value)+"%")
+		m.OpList.Store(fmt.Sprintf("where `%s` like ?", column), "%"+fmt.Sprint(value)+"%")
 	}
 }

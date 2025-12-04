@@ -63,3 +63,5 @@ const (
 	LogLevelWarn
 	LogLevelInfo
 )
+
+type LogConfig = conf.LogConfig

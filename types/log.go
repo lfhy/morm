@@ -1,6 +1,8 @@
 package types
 
-import "gorm.io/gorm/logger"
+import (
+	"gorm.io/gorm/logger"
+)
 
 type LogLevel = logger.LogLevel
 
