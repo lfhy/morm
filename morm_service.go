@@ -112,3 +112,9 @@ func Upsert[T any](baseModel BaseModel, where func(m Model), update T) error {
 	where(model)
 	return model.Upsert(update)
 }
+
+// 创建并返回ID
+func Insert(baseModel BaseModel) (id string, err error) {
+	data := types.DeepCopy(baseModel)
+	return baseModel.M().Create(data)
+}
