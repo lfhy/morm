@@ -374,15 +374,10 @@ func (m *Model) Upsert(data any, value ...any) error {
 // 删除
 func (m *Model) Delete(data ...any) error {
 	m.CheckOID()
-	if len(data) > 0 && data[0] != nil {
-		m.Data = data[0]
+	if data != nil {
+		m.Data = data
 	}
-	_, err := m.Tx.Client.Database(m.Tx.Database).Collection(m.GetCollection(m.Data)).DeleteMany(m.GetContext(), m.WhereList)
-	if err != nil {
-		log.Error(err)
-	}
-
-	return err
+	return m.Find().Delete()
 }
 
 // 修改

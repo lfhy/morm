@@ -69,6 +69,14 @@ func (q *Query) Delete() error {
 	if err != nil {
 		return err
 	}
+	log.Debugf("批量删除ID: %+v\n", deleteIDs)
+	if len(deleteIDs) == 0 {
+		return nil
+	}
+	if len(deleteIDs) == 1 {
+		_, err := q.m.Tx.Client.Database(q.m.Tx.Database).Collection(q.m.GetCollection(q.m.Data)).DeleteOne(q.m.GetContext(), deleteIDs[0])
+		return err
+	}
 	// 批量删除
 	var models []mongo.WriteModel
 	for _, id := range deleteIDs {
