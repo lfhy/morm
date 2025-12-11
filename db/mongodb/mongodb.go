@@ -378,7 +378,7 @@ func (m *Model) Upsert(data any, value ...any) error {
 // 删除
 func (m *Model) Delete(data ...any) error {
 	if len(data) > 0 {
-		m.Where(data)
+		m.Where(data[0])
 	}
 	return m.Find().Delete()
 }
