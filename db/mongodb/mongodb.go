@@ -377,10 +377,7 @@ func (m *Model) Upsert(data any, value ...any) error {
 
 // 删除
 func (m *Model) Delete(data ...any) error {
-	m.CheckOID()
-	if data != nil {
-		m.Data = data
-	}
+	m.Where(data)
 	return m.Find().Delete()
 }
 
