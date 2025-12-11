@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"sync"
 
 	"github.com/lfhy/morm/types"
 
@@ -313,4 +314,11 @@ func (m *Model) saveOplist(mode types.WhereMode, column string, value any) {
 	case types.WhereLike:
 		m.OpList.Store(fmt.Sprintf("where `%s` like ?", column), "%"+fmt.Sprint(value)+"%")
 	}
+}
+
+func (m *Model) ResetFilter() types.ORMModel {
+	m.OpList = types.NewOrderedMap()
+	m.upsertOp = sync.Map{}
+	m.Data = nil
+	return m
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"sync"
 
 	"github.com/lfhy/morm/log"
 	"github.com/lfhy/morm/types"
@@ -264,25 +265,25 @@ func (m *Model) CheckOID() {
 			}
 		}
 	}
-	
+
 	// 处理 $or_like 条件，将其合并到 $or 条件中
 	if orLike, exists := m.WhereList["$or_like"]; exists {
 		var orArray bson.A
-		
+
 		// 检查是否已存在 $or 条件
 		if existingOr, exists := m.WhereList["$or"]; exists {
 			orArray = existingOr.(bson.A)
 		} else {
 			orArray = bson.A{}
 		}
-		
+
 		// 将 $or_like 中的条件添加到 $or 中
 		orLikeArray := orLike.(bson.A)
 		orArray = append(orArray, orLikeArray...)
-		
+
 		// 更新 WhereList
 		m.WhereList["$or"] = orArray
-		
+
 		// 删除临时的 $or_like 条件
 		delete(m.WhereList, "$or_like")
 	}
@@ -449,4 +450,11 @@ func (m *Model) saveOplist(mode types.WhereMode, column string, value any) {
 			m.WhereList["$or_like"] = orArray
 		}
 	}
+}
+
+func (m *Model) ResetFilter() types.ORMModel {
+	m.WhereList = bson.M{}
+	m.OpList = sync.Map{}
+	m.Data = nil
+	return m
 }

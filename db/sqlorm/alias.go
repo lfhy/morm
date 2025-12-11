@@ -33,3 +33,7 @@ func (m *Model) Lte(condition any, value ...any) types.ORMModel {
 func (m *Model) Or(condition any, value ...any) types.ORMModel {
 	return m.WhereOr(condition, value...)
 }
+
+func (m *Model) Reset() types.ORMModel {
+	return m.ResetFilter()
+}

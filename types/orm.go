@@ -88,6 +88,10 @@ type ORMModel interface {
 	// 具体查询执行需要在查询函数中进行
 	Find() ORMQuery
 
+	// 清除过滤条件
+	Reset() ORMModel
+	ResetFilter() ORMModel
+
 	// 过滤条件
 	// Where只能传入结构体
 	// 会根据每个结构体的赋值情况进行查询
