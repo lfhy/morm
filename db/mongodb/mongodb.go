@@ -103,17 +103,21 @@ func (m *Model) GetCollection(dest any) string {
 	if m.Collection != "" {
 		return m.Collection
 	}
+	m.Collection = GetTableName(dest)
+	return m.Collection
+}
+
+func GetTableName(dest any) string {
 	switch v := dest.(type) {
 	case Table:
-		m.Collection = v.TableName()
+		return v.TableName()
 	case *Table:
-		m.Collection = (*v).TableName()
+		return (*v).TableName()
 	case string:
-		m.Collection = fmt.Sprint(dest)
+		return fmt.Sprint(dest)
 	default:
-		m.Collection = reflect.TypeOf(dest).Elem().Name()
+		return reflect.TypeOf(dest).Elem().Name()
 	}
-	return m.Collection
 }
 
 // 启动事务做函数调用

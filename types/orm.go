@@ -34,6 +34,10 @@ type Cursor interface {
 }
 
 type ORMModel interface {
+
+	// 设置表或集合 可以传入带有TableName() string 方法的对象 也可以传入具体字符串
+	TableName(table any) ORMModel
+
 	// 插入数据
 	// 返回错误
 	// 传入的必须是结构体指针才可以修改原始数据

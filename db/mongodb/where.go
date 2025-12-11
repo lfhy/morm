@@ -458,3 +458,8 @@ func (m *Model) ResetFilter() types.ORMModel {
 	m.Data = nil
 	return m
 }
+
+func (m *Model) TableName(table any) types.ORMModel {
+	m.Collection = GetTableName(table)
+	return m
+}
