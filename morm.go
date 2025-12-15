@@ -10,6 +10,7 @@ import (
 	"github.com/lfhy/morm/db/sqlite"
 	"github.com/lfhy/morm/log"
 	"github.com/spf13/viper"
+	"gorm.io/gorm/logger"
 )
 
 var (
@@ -173,4 +174,16 @@ func InitMongoDBWithDBConfig(config *MongoDBConfig) ORM {
 func InitMongoDBWithDBConfigWithError(config *MongoDBConfig) (ORM, error) {
 	config.Init()
 	return InitMongoDBWithError()
+}
+
+func SetDBLoger(l logger.Interface) {
+	log.SetDBLoger(l)
+}
+
+func GetDBLoger() logger.Interface {
+	return log.GetDBLoger()
+}
+
+func InitDBLoger() logger.Interface {
+	return log.InitDBLoger()
 }

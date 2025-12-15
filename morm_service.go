@@ -10,7 +10,9 @@ type BaseModel interface {
 	TableName() string
 }
 
-func List[T BaseModel, Where any | func(m Model), ListFn func(m T) bool | func(m T) | func(m T) error](base T, ctx *ListOption, where Where, listFn ListFn) int64 {
+// List 分页查询
+// Where 可以是函数，也可以是Model
+func List[T BaseModel, ListFn func(m T) bool | func(m T) | func(m T) error](base T, ctx *ListOption, where any, listFn ListFn) int64 {
 	model := base.M()
 	switch w := any(where).(type) {
 	case func(m Model):
@@ -87,7 +89,8 @@ func buildWhere[Where any | func(m Model)](model Model, where Where) {
 }
 
 // 获取单个
-func One[T any, Where any | func(m Model)](baseModel BaseModel, where ...Where) (*T, error) {
+// Where 可以是函数，也可以是Model
+func One[T any](baseModel BaseModel, where ...any) (*T, error) {
 	var base T
 	model := baseModel.M()
 	for _, fn := range where {
@@ -97,7 +100,8 @@ func One[T any, Where any | func(m Model)](baseModel BaseModel, where ...Where) 
 }
 
 // 获取多个
-func All[T any, Where any | func(m Model)](baseModel BaseModel, where ...Where) ([]*T, error) {
+// Where 可以是函数，也可以是Model
+func All[T any](baseModel BaseModel, where ...any) ([]*T, error) {
 	var base []*T
 	model := baseModel.M()
 	for _, fn := range where {
@@ -107,7 +111,8 @@ func All[T any, Where any | func(m Model)](baseModel BaseModel, where ...Where) 
 }
 
 // 删除
-func Delete[Where any | func(m Model)](baseModel BaseModel, where Where) error {
+// Where 可以是函数，也可以是Model
+func Delete(baseModel BaseModel, where any) error {
 	model := baseModel.M()
 	buildWhere(model, where)
 	return model.Delete()
@@ -124,14 +129,18 @@ func Create(baseModel BaseModel) error {
 }
 
 // 更新
-func Update[T any, Where any | func(m Model)](baseModel BaseModel, where Where, update T) error {
+// Where 可以是函数，也可以是Model
+// update 为Model对象
+func Update(baseModel BaseModel, where any, update any) error {
 	model := baseModel.M()
 	buildWhere(model, where)
 	return model.Update(update)
 }
 
 // 更新或插入
-func Upsert[T any, Where any | func(m Model)](baseModel BaseModel, where Where, update T) error {
+// Where 可以是函数，也可以是Model
+// update 为Model对象
+func Upsert(baseModel BaseModel, where any, update any) error {
 	model := baseModel.M()
 	buildWhere(model, where)
 	return model.Upsert(update)
