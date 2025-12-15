@@ -10,10 +10,15 @@ type BaseModel interface {
 	TableName() string
 }
 
-func List[T BaseModel](base T, ctx *ListOption, where func(m Model), listFn func(m T) bool) int64 {
+func List[T BaseModel, Where any | func(m Model), ListFn func(m T) bool | func(m T) | func(m T) error](base T, ctx *ListOption, where Where, listFn ListFn) int64 {
 	model := base.M()
-	if where != nil {
-		where(model)
+	switch w := any(where).(type) {
+	case func(m Model):
+		w(model)
+	default:
+		if w != nil {
+			model.Where(model)
+		}
 	}
 	total := model.Find().Count()
 	if total == 0 {
@@ -53,39 +58,58 @@ func List[T BaseModel](base T, ctx *ListOption, where func(m Model), listFn func
 			log.Errorf("Decode Error:%v", err)
 			continue
 		}
-		if !listFn(base) {
-			break
+		switch lfn := any(listFn).(type) {
+		case func(m T) bool:
+			if !lfn(base) {
+				break
+			}
+		case func(m T) error:
+			if err := lfn(base); err != nil {
+				log.Error("ListFn:", err)
+				break
+			}
+		case func(m T):
+			lfn(base)
 		}
 	}
 	return total
 }
 
+func buildWhere[Where any | func(m Model)](model Model, where Where) {
+	switch f := any(where).(type) {
+	case func(m Model):
+		f(model)
+	default:
+		if f != nil {
+			model.Where(model)
+		}
+	}
+}
+
 // 获取单个
-func One[T any](baseModel BaseModel, where ...func(m Model)) (*T, error) {
+func One[T any, Where any | func(m Model)](baseModel BaseModel, where ...Where) (*T, error) {
 	var base T
 	model := baseModel.M()
 	for _, fn := range where {
-		fn(model)
+		buildWhere(model, fn)
 	}
 	return &base, model.Find().One(&base)
 }
 
 // 获取多个
-func All[T any](baseModel BaseModel, where ...func(m Model)) ([]*T, error) {
+func All[T any, Where any | func(m Model)](baseModel BaseModel, where ...Where) ([]*T, error) {
 	var base []*T
 	model := baseModel.M()
 	for _, fn := range where {
-		fn(model)
+		buildWhere(model, fn)
 	}
 	return base, model.Find().All(&base)
 }
 
 // 删除
-func Delete(baseModel BaseModel, where func(m Model)) error {
+func Delete[Where any | func(m Model)](baseModel BaseModel, where Where) error {
 	model := baseModel.M()
-	if where != nil {
-		where(model)
-	}
+	buildWhere(model, where)
 	return model.Delete()
 }
 
@@ -100,16 +124,16 @@ func Create(baseModel BaseModel) error {
 }
 
 // 更新
-func Update[T any](baseModel BaseModel, where func(m Model), update T) error {
+func Update[T any, Where any | func(m Model)](baseModel BaseModel, where Where, update T) error {
 	model := baseModel.M()
-	where(model)
+	buildWhere(model, where)
 	return model.Update(update)
 }
 
 // 更新或插入
-func Upsert[T any](baseModel BaseModel, where func(m Model), update T) error {
+func Upsert[T any, Where any | func(m Model)](baseModel BaseModel, where Where, update T) error {
 	model := baseModel.M()
-	where(model)
+	buildWhere(model, where)
 	return model.Upsert(update)
 }
 
