@@ -19,7 +19,7 @@ func List[T BaseModel, ListFn func(m T) bool | func(m T) | func(m T) error](base
 		w(model)
 	default:
 		if w != nil {
-			model.Where(model)
+			model.Where(w)
 		}
 	}
 	total := model.Find().Count()
@@ -83,7 +83,7 @@ func buildWhere[Where any | func(m Model)](model Model, where Where) {
 		f(model)
 	default:
 		if f != nil {
-			model.Where(model)
+			model.Where(f)
 		}
 	}
 }
