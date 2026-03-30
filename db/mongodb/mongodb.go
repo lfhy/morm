@@ -256,8 +256,30 @@ func ConvertToBSONM(data any) (bson.M, error) {
 			continue
 		}
 
-		// 常规字段赋值
-		bsonData[fieldName] = field.Interface()
+		if fieldName == "_id" {
+			id := field.Interface()
+			switch id := id.(type) {
+			case primitive.ObjectID:
+				// OID则不需要改
+				bsonData[fieldName] = id
+			default:
+				// 判断是否是0值 是则跳过
+				if field.IsZero() {
+					continue
+				}
+				idstr := fmt.Sprint(id)
+				oid, err := primitive.ObjectIDFromHex(idstr)
+				if err != nil {
+					log.Error("转换失败:", err, "原始ID:", idstr)
+					return nil, log.Error(err)
+				}
+				bsonData[fieldName] = oid
+			}
+		} else {
+			// 常规字段赋值
+			bsonData[fieldName] = field.Interface()
+		}
+
 	}
 
 	return bsonData, nil
