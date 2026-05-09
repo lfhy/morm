@@ -270,8 +270,10 @@ func ConvertToBSONM(data any) (bson.M, error) {
 				idstr := fmt.Sprint(id)
 				oid, err := primitive.ObjectIDFromHex(idstr)
 				if err != nil {
-					log.Error("转换失败:", err, "原始ID:", idstr)
-					return nil, log.Error(err)
+					// _id 允许显式使用字符串等自定义值；仅在看起来像 hex ObjectID
+					// 时转换，失败则按原值写入。
+					bsonData[fieldName] = id
+					continue
 				}
 				bsonData[fieldName] = oid
 			}
