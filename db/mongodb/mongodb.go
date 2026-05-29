@@ -246,6 +246,12 @@ func ConvertToBSONM(data any) (bson.M, error) {
 			field = field.Elem()
 		}
 
+		// time.Time 直接写入，避免被递归转换成空对象
+		if field.Type() == reflect.TypeOf(time.Time{}) {
+			bsonData[fieldName] = field.Interface()
+			continue
+		}
+
 		// 处理嵌套结构体或指针（递归转换）
 		if field.Kind() == reflect.Struct {
 			nestedData, err := ConvertToBSONM(field.Interface())

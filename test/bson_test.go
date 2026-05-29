@@ -3,6 +3,7 @@ package test
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/lfhy/morm/db/mongodb"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -36,6 +37,11 @@ type oidStringData struct {
 
 type oidObjectData struct {
 	ID primitive.ObjectID `bson:"_id"`
+}
+
+type timeData struct {
+	CreatedAt time.Time  `bson:"created_at"`
+	UpdatedAt *time.Time `bson:"updated_at"`
 }
 
 func TestBSONOIDStringHexToObjectID(t *testing.T) {
@@ -80,5 +86,30 @@ func TestBSONOIDObjectIDPreserved(t *testing.T) {
 	}
 	if got != oid {
 		t.Fatalf("expected _id to remain %s, got %s", oid.Hex(), got.Hex())
+	}
+}
+
+func TestBSONTimePreserved(t *testing.T) {
+	now := time.Date(2026, time.May, 29, 8, 0, 0, 0, time.UTC)
+	data := timeData{CreatedAt: now, UpdatedAt: &now}
+	m, err := mongodb.ConvertToBSONM(data)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	createdAt, ok := m["created_at"].(time.Time)
+	if !ok {
+		t.Fatalf("expected created_at to remain time.Time, got %T", m["created_at"])
+	}
+	if !createdAt.Equal(now) {
+		t.Fatalf("expected created_at to remain %v, got %v", now, createdAt)
+	}
+
+	updatedAt, ok := m["updated_at"].(time.Time)
+	if !ok {
+		t.Fatalf("expected updated_at to remain time.Time, got %T", m["updated_at"])
+	}
+	if !updatedAt.Equal(now) {
+		t.Fatalf("expected updated_at to remain %v, got %v", now, updatedAt)
 	}
 }
