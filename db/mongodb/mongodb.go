@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/url"
 	"reflect"
+	"strconv"
 	"strings"
 	"time"
 
@@ -66,10 +67,19 @@ func Init() (types.ORM, error) {
 	opts.SetReadPreference(readpref.Primary())
 	// 连接mongodb
 	// // 写确认
-	opts.SetWriteConcern(&writeconcern.WriteConcern{
-		W:        W,
-		WTimeout: 1 * time.Second,
-	})
+	wInt, err := strconv.Atoi(W)
+	if err == nil {
+		opts.SetWriteConcern(&writeconcern.WriteConcern{
+			W:        wInt,
+			WTimeout: 1 * time.Second,
+		})
+	} else {
+		opts.SetWriteConcern(&writeconcern.WriteConcern{
+			W:        W,
+			WTimeout: 1 * time.Second,
+		})
+	}
+
 	// 连接mongodb
 	client, err := mongo.Connect(ctx, opts)
 
