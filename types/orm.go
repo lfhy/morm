@@ -221,6 +221,18 @@ type ORMModel interface {
 	// 在查询大量数据时可以减少内存占用
 	// 使用时需要及时使用Close 避免内存泄漏
 	Cursor() (Cursor, error)
+
+	// 原子自增
+	// 根据当前的 Where 条件，将指定列原子地增加 amount。
+	// 列不存在时由数据库决定行为（SQL 需要先有记录）。
+	// SQL 后端生成 UPDATE ... SET col = col + amount
+	// Mongo 后端生成 {$inc: {col: amount}}
+	Incr(column string, amount int64) error
+
+	// 按列更新（map 形式，支持表达式）
+	// SQL 后端等价 gorm UpdateColumns(map)，会原样写入，不跳过零值
+	// Mongo 后端等价 {$set: ...} 或扩展操作符（value 里传 bson.M 时原样合并）
+	UpdateColumns(data any) error
 }
 
 type ORMQuery interface {
