@@ -23,6 +23,8 @@ type ORM interface {
 
 type Session interface {
 	ORMModel
+	// SwitchModel 返回绑定到当前事务的 ORMModel，用于跨表/跨集合事务操作
+	SwitchModel(data any) ORMModel
 	Commit() error
 	Rollback() error
 }

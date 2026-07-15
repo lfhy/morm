@@ -62,12 +62,30 @@ func (m *Model) Page(page, limit int) types.ORMModel {
 	return m.Offset((page - 1) * limit).Limit(limit)
 }
 
+// SessionModel 是事务期间暴露给用户的 Session 实现。
+// 它嵌入 *Model 继承所有 ORMModel 方法，并额外提供 SwitchModel 方法
+// 用于在事务内切换到不同的表/结构体，同时共享同一个 gorm 事务。
+type sqlSessionModel struct {
+	*Model
+}
+
+// SwitchModel 返回绑定到当前事务的新 ORMModel，允许跨表操作。
+func (s *sqlSessionModel) SwitchModel(data any) types.ORMModel {
+	return &Model{
+		Data:         data,
+		OpList:       types.NewOrderedMap(),
+		tx:           s.tx,
+		translatorDB: s.translatorDB, // 共享事务 tx
+		upsertOp:     sync.Map{},
+	}
+}
+
 func (m *Model) Session(transactionFunc func(types.Session) error) error {
 	err := m.tx.Transaction(func(tx *gorm.DB) error {
 		if m.translatorDB == nil {
 			m.translatorDB = tx
 		}
-		return transactionFunc(m)
+		return transactionFunc(&sqlSessionModel{Model: m})
 	})
 	if err != nil && m.userControlTranslator && errors.Is(err, sql.ErrTxDone) {
 		return nil

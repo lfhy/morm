@@ -8,13 +8,14 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/lfhy/morm/conf"
+	"github.com/lfhy/morm/log"
 	"github.com/lfhy/morm/types"
 	"golang.org/x/net/proxy"
 
-	"github.com/lfhy/morm/log"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -164,6 +165,19 @@ type SessionModel struct {
 	session               mongo.Session
 	userControlTranslator bool
 	*Model
+}
+
+// SwitchModel 返回绑定到当前 session 的新 ORMModel，允许跨集合操作。
+func (s *SessionModel) SwitchModel(data any) types.ORMModel {
+	m := &Model{
+		Data:       data,
+		Tx:         s.Tx,
+		WhereList:  bson.M{},
+		OpList:     sync.Map{},
+		Collection: "",
+	}
+	m.Collection = m.GetCollection(data)
+	return m
 }
 
 func (m *SessionModel) Commit() error {
