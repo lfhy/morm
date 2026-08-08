@@ -6,7 +6,6 @@ import (
 	"github.com/lfhy/morm/log"
 	"github.com/lfhy/morm/types"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -59,7 +58,7 @@ func (q *Query) Count() int64 {
 }
 
 type IDModel struct {
-	ID primitive.ObjectID `bson:"_id"`
+	ID any `bson:"_id"`
 }
 
 // 删除查询结果
