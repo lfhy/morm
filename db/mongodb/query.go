@@ -49,12 +49,17 @@ func (q *Query) All(data any) error {
 }
 
 func (q *Query) Count() int64 {
-	log.Debugf("查询集合 %v ,Mongo查询条件: %+v", q.m.GetCollection(q.m.Data), q.m.WhereList)
-	i, err := q.m.Tx.Client.Database(q.m.Tx.Database).Collection(q.m.GetCollection(q.m.Data)).CountDocuments(q.m.GetContext(), q.m.WhereList)
+	i, err := q.CountWithError()
 	if err != nil {
 		log.Errorf("Mongo查出错: %v\n", err)
 	}
 	return i
+}
+
+// CountWithError 返回 Mongo 查询个数及执行错误。
+func (q *Query) CountWithError() (int64, error) {
+	log.Debugf("查询集合 %v ,Mongo查询条件: %+v", q.m.GetCollection(q.m.Data), q.m.WhereList)
+	return q.m.Tx.Client.Database(q.m.Tx.Database).Collection(q.m.GetCollection(q.m.Data)).CountDocuments(q.m.GetContext(), q.m.WhereList)
 }
 
 type IDModel struct {
@@ -118,6 +123,11 @@ func (c *Cursor) Close() error {
 		log.Errorf("Mongo游标关闭出错: %v\n", err)
 	}
 	return err
+}
+
+// Err 返回 Mongo 游标迭代期间产生的错误。
+func (c *Cursor) Err() error {
+	return c.Cursor.Err()
 }
 
 func (c *Cursor) Decode(v any) error {

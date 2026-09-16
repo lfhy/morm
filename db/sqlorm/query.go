@@ -23,9 +23,18 @@ func (q *Query) All(data any) error {
 }
 
 func (q *Query) Count() int64 {
-	var i int64
-	q.m.makeQuery().Count(&i)
+	i, err := q.CountWithError()
+	if err != nil {
+		log.Errorf("Mysql查出错: %v\n", err)
+	}
 	return i
+}
+
+// CountWithError 返回 SQL 查询个数及执行错误。
+func (q *Query) CountWithError() (int64, error) {
+	var i int64
+	err := q.m.makeQuery().Count(&i).Error
+	return i, err
 }
 
 func (q *Query) Delete() error {
@@ -45,6 +54,11 @@ func (q *Query) Cursor() (types.Cursor, error) {
 type Cursor struct {
 	db *gorm.DB
 	*sql.Rows
+}
+
+// Err 返回 SQL 游标迭代期间产生的错误。
+func (c *Cursor) Err() error {
+	return c.Rows.Err()
 }
 
 func (c *Cursor) Decode(v any) error {

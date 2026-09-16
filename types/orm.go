@@ -33,6 +33,8 @@ type Cursor interface {
 	Next() bool
 	Decode(v any) error
 	Close() error
+	// Err 返回游标迭代期间产生的错误。
+	Err() error
 }
 
 type ORMModel interface {
@@ -244,6 +246,8 @@ type ORMQuery interface {
 	All(data any) error
 	// 返回查询个数
 	Count() int64
+	// 返回查询个数及执行错误
+	CountWithError() (int64, error)
 	// 删除查询结果
 	Delete() error
 	// 游标

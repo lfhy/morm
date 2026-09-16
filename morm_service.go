@@ -1,6 +1,8 @@
 package morm
 
 import (
+	"errors"
+	"fmt"
 	"reflect"
 
 	"github.com/lfhy/morm/log"
@@ -15,13 +17,30 @@ type BaseModel interface {
 // List 分页查询
 // Where 可以是函数，也可以是Model
 func List[T BaseModel, ListFn func(m T) bool | func(m T) | func(m T) error](base T, ctx *ListOption, where any, listFn ListFn) int64 {
+	total, err := ListWithError(base, ctx, where, listFn)
+	if err != nil {
+		log.Errorf("List Error:%v", err)
+	}
+	return total
+}
+
+// ListWithError 分页查询并返回查询、游标和回调错误。
+// BSON 解码失败会跳过当前记录；回调返回错误或 false 时停止继续读取。
+func ListWithError[T BaseModel, ListFn func(m T) bool | func(m T) | func(m T) error](base T, ctx *ListOption, where any, listFn ListFn) (total int64, err error) {
 	model := buildWhere(base.M(), where)
-	total := model.Find().Count()
+	total, err = model.Find().CountWithError()
+	if err != nil {
+		return total, fmt.Errorf("counting list records: %w", err)
+	}
 	if total == 0 {
-		return total
+		return total, nil
 	}
 	if listFn == nil {
-		return total
+		return total, nil
+	}
+	if ctx == nil {
+		// 空分页配置按默认值处理，避免错误感知入口因 nil 配置 panic。
+		ctx = &ListOption{}
 	}
 	if !ctx.All {
 		model.Page(ctx.GetPage(), ctx.GetLimit())
@@ -44,31 +63,41 @@ func List[T BaseModel, ListFn func(m T) bool | func(m T) | func(m T) error](base
 	}
 	cur, err := model.Cursor()
 	if err != nil {
-		log.Errorf("Cursor Error:%v", err)
-		return total
+		return total, fmt.Errorf("opening list cursor: %w", err)
 	}
-	defer cur.Close()
+	defer func() {
+		if closeErr := cur.Close(); closeErr != nil {
+			closeErr = fmt.Errorf("closing list cursor: %w", closeErr)
+			if err == nil {
+				err = closeErr
+				return
+			}
+			err = errors.Join(err, closeErr)
+		}
+	}()
 	for cur.Next() {
-		var base T
-		if err := cur.Decode(&base); err != nil {
-			log.Errorf("Decode Error:%v", err)
+		var record T
+		if decodeErr := cur.Decode(&record); decodeErr != nil {
+			log.Errorf("Decode Error:%v", decodeErr)
 			continue
 		}
 		switch lfn := any(listFn).(type) {
 		case func(m T) bool:
-			if !lfn(base) {
-				break
+			if !lfn(record) {
+				return total, nil
 			}
 		case func(m T) error:
-			if err := lfn(base); err != nil {
-				log.Error("ListFn:", err)
-				break
+			if callbackErr := lfn(record); callbackErr != nil {
+				return total, fmt.Errorf("list callback: %w", callbackErr)
 			}
 		case func(m T):
-			lfn(base)
+			lfn(record)
 		}
 	}
-	return total
+	if cursorErr := cur.Err(); cursorErr != nil {
+		return total, fmt.Errorf("iterating list cursor: %w", cursorErr)
+	}
+	return total, nil
 }
 
 // buildWhere 支持 where 为：
@@ -76,6 +105,7 @@ func List[T BaseModel, ListFn func(m T) bool | func(m T) | func(m T) error](base
 //  2. Model（ORMModel 接口）：已链式构造好的查询模型，如 m.M().Lt(...).WhereIs(...)
 //     此时直接复用该模型（含表名、Where 条件），后续条件继续叠加
 //  3. 其他任意类型：走 model.Where(w)（结构体/map 等）
+//
 // where 为 nil（含接口内 nil 指针）时跳过
 func buildWhere[Where any | func(m Model)](model Model, where Where) Model {
 	switch f := any(where).(type) {
