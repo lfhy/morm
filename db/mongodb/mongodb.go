@@ -25,10 +25,41 @@ import (
 )
 
 func Init() (types.ORM, error) {
-	ctx := context.Background()
+	config := &conf.MongoDBConfig{
+		Database:       conf.ReadConfigToString("mongodb", "database"),
+		OptionPoolSize: strconv.Itoa(conf.ReadConfigToInt("mongodb", "option_pool_size")),
+		Proxy:          conf.ReadConfigToString("mongodb", "proxy"),
+		Uri:            conf.ReadConfigToString("mongodb", "uri"),
+		W:              conf.ReadConfigToString("mongodb", "w"),
+		ReadMode:       conf.ReadConfigToString("mongodb", "readmode"),
+	}
+	conn, err := initWithConfig(context.Background(), config, false)
+	if err != nil {
+		return nil, err
+	}
+	ORMConn = conn.(*DBConn)
+	return conn, nil
+}
+
+// InitWithConfig creates an independent connection without using or changing
+// the legacy configuration singleton. The caller owns the returned connection.
+func InitWithConfig(ctx context.Context, config *conf.MongoDBConfig) (types.ORM, error) {
+	return initWithConfig(ctx, config, true)
+}
+
+func initWithConfig(ctx context.Context, config *conf.MongoDBConfig, verify bool) (types.ORM, error) {
+	if ctx == nil {
+		return nil, errors.New("mongodb initialization requires a context")
+	}
+	if err := ctx.Err(); err != nil {
+		return nil, fmt.Errorf("initialize mongodb: %w", err)
+	}
+	if config == nil {
+		return nil, errors.New("mongodb initialization requires a configuration")
+	}
 	// 设置连接uri
-	opts := options.Client().ApplyURI(conf.ReadConfigToString("mongodb", "uri"))
-	proxys := conf.ReadConfigToString("mongodb", "proxy")
+	opts := options.Client().ApplyURI(config.Uri)
+	proxys := config.Proxy
 	if proxys != "" {
 		// socks5://user:pass@host:port
 		u, err := url.Parse(proxys)
@@ -50,13 +81,13 @@ func Init() (types.ORM, error) {
 			}
 		}
 	}
-	poolSize := conf.ReadConfigToInt("mongodb", "option_pool_size")
-	readMode := conf.ReadConfigToString("mongodb", "readmode")
-	W := conf.ReadConfigToString("mongodb", "w")
+	poolSize, _ := strconv.Atoi(config.OptionPoolSize)
+	readMode := config.ReadMode
+	W := config.W
 	if W == "" {
 		W = "majority"
 	}
-	if poolSize == 0 {
+	if poolSize <= 0 {
 		poolSize = 150
 	}
 
@@ -83,14 +114,27 @@ func Init() (types.ORM, error) {
 
 	// 连接mongodb
 	client, err := mongo.Connect(ctx, opts)
-
 	if err != nil {
-		return nil, err
+		return nil, mongoInitError(ctx, "connect")
 	}
-	conn := DBConn{Database: conf.ReadConfigToString("mongodb", "database"), Client: client, NearestClient: client}
-	ORMConn = &conn
+	cleanup := func() {
+		cleanupCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		_ = client.Disconnect(cleanupCtx)
+	}
+	if verify {
+		if err := client.Ping(ctx, readpref.Primary()); err != nil {
+			cleanup()
+			return nil, mongoInitError(ctx, "ping primary")
+		}
+	}
+	if err := ctx.Err(); err != nil {
+		cleanup()
+		return nil, fmt.Errorf("mongodb connect: %w", err)
+	}
+	conn := &DBConn{Database: config.Database, Client: client, NearestClient: client}
 	if readMode == "master" {
-		return ORMConn, nil
+		return conn, nil
 	}
 
 	// 使用就近读取
@@ -101,12 +145,35 @@ func Init() (types.ORM, error) {
 	// 连接mongodb
 	nearestClient, err := mongo.Connect(ctx, opts)
 	if err != nil {
-		client.Disconnect(ctx)
-		return nil, err
+		cleanup()
+		return nil, mongoInitError(ctx, "connect nearest")
 	}
 	conn.NearestClient = nearestClient
+	if verify {
+		if err := nearestClient.Ping(ctx, opts.ReadPreference); err != nil {
+			cleanupCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			_ = conn.Disconnect(cleanupCtx)
+			cancel()
+			return nil, mongoInitError(ctx, "ping nearest")
+		}
+	}
+	if err := ctx.Err(); err != nil {
+		cleanupCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		_ = conn.Disconnect(cleanupCtx)
+		cancel()
+		return nil, fmt.Errorf("mongodb connect nearest: %w", err)
+	}
 
-	return ORMConn, nil
+	return conn, nil
+}
+
+// Driver errors can include the connection string, including credentials.
+// Preserve context cancellation for errors.Is without exposing that string.
+func mongoInitError(ctx context.Context, stage string) error {
+	if err := ctx.Err(); err != nil {
+		return fmt.Errorf("mongodb %s: %w", stage, err)
+	}
+	return fmt.Errorf("mongodb %s failed", stage)
 }
 
 // 获取集合

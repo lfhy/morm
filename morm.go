@@ -1,6 +1,7 @@
 package morm
 
 import (
+	"context"
 	"fmt"
 	"sync"
 
@@ -174,6 +175,14 @@ func InitMongoDBWithDBConfig(config *MongoDBConfig) ORM {
 func InitMongoDBWithDBConfigWithError(config *MongoDBConfig) (ORM, error) {
 	config.Init()
 	return InitMongoDBWithError()
+}
+
+// InitMongoDBWithDBConfigContext initializes a MongoDB connection using the
+// caller's deadline. Unlike the legacy helpers, it does not change the global
+// configuration or the package's default MongoDB connection. The caller owns
+// the returned connection and must disconnect it when finished.
+func InitMongoDBWithDBConfigContext(ctx context.Context, config *MongoDBConfig) (ORM, error) {
+	return mongodb.InitWithConfig(ctx, config)
 }
 
 func SetDBLoger(l logger.Interface) {

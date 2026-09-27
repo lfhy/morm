@@ -2,6 +2,7 @@ package mongodb
 
 import (
 	"context"
+	"errors"
 	"sync"
 
 	"github.com/lfhy/morm/types"
@@ -16,6 +17,17 @@ type DBConn struct {
 	Database      string //连接的数据库
 	NearestClient *mongo.Client
 	*mongo.Client
+}
+
+// Disconnect closes both clients when nearest reads have a separate client.
+func (m *DBConn) Disconnect(ctx context.Context) error {
+	if m == nil || m.Client == nil {
+		return nil
+	}
+	if m.NearestClient != nil && m.NearestClient != m.Client {
+		return errors.Join(m.NearestClient.Disconnect(ctx), m.Client.Disconnect(ctx))
+	}
+	return m.Client.Disconnect(ctx)
 }
 
 var ORMConn *DBConn
