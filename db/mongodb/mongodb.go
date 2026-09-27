@@ -133,60 +133,104 @@ func GetTableName(dest any) string {
 
 // 启动事务做函数调用
 func (m *Model) Session(transactionFunc func(session types.Session) error) error {
-	// 创建会话
 	session, err := m.Tx.Client.StartSession()
 	if err != nil {
 		return log.Error(err)
 	}
-	// 使用适配后的函数
-	sctx := m.GetContext()
-	defer session.EndSession(sctx)
+	ctx := m.GetContext()
+	defer session.EndSession(ctx)
 
-	sessionModel := &SessionModel{session: session, Model: m}
-
-	adaptedFunc := func(ctx mongo.SessionContext) (any, error) {
-		return nil, transactionFunc(sessionModel)
-	}
-
-	_, err = session.WithTransaction(sctx, adaptedFunc)
-	// 需要排除是否用户主动操作事务
-	if err == nil && sessionModel.userControlTranslator {
-		return nil
-	}
+	// WithTransaction may retry the callback. Give each attempt its own model,
+	// bound to the driver's session context, without leaving that context on the
+	// original model after the transaction ends.
+	_, err = session.WithTransaction(ctx, func(sessionCtx mongo.SessionContext) (any, error) {
+		txModel := &Model{
+			Tx:                 m.Tx,
+			Data:               m.Data,
+			WhereList:          cloneMongoValue(m.WhereList).(bson.M),
+			Ctx:                sessionCtx,
+			Collection:         m.Collection,
+			transactionSession: session,
+		}
+		m.OpList.Range(func(key, value any) bool {
+			txModel.OpList.Store(key, cloneMongoValue(value))
+			return true
+		})
+		return nil, transactionFunc(&SessionModel{session: session, Model: txModel})
+	})
 	if err != nil {
-		session.AbortTransaction(sctx)
 		return log.Error(err)
 	}
-	session.CommitTransaction(sctx)
 	return nil
 }
 
 type SessionModel struct {
-	session               mongo.Session
-	userControlTranslator bool
+	session mongo.Session
 	*Model
+}
+
+// Clone filters/options for each WithTransaction attempt. Callback operations
+// may modify nested BSON values; a retry must begin with the caller's original
+// conditions, not the previous attempt's mutations.
+func cloneMongoValue(value any) any {
+	switch v := value.(type) {
+	case bson.M:
+		copy := make(bson.M, len(v))
+		for key, item := range v {
+			copy[key] = cloneMongoValue(item)
+		}
+		return copy
+	case bson.D:
+		copy := make(bson.D, len(v))
+		for i, item := range v {
+			copy[i] = bson.E{Key: item.Key, Value: cloneMongoValue(item.Value)}
+		}
+		return copy
+	case bson.A:
+		copy := make(bson.A, len(v))
+		for i, item := range v {
+			copy[i] = cloneMongoValue(item)
+		}
+		return copy
+	case map[string]any:
+		copy := make(map[string]any, len(v))
+		for key, item := range v {
+			copy[key] = cloneMongoValue(item)
+		}
+		return copy
+	case []any:
+		copy := make([]any, len(v))
+		for i, item := range v {
+			copy[i] = cloneMongoValue(item)
+		}
+		return copy
+	default:
+		return value
+	}
 }
 
 // SwitchModel 返回绑定到当前 session 的新 ORMModel，允许跨集合操作。
 func (s *SessionModel) SwitchModel(data any) types.ORMModel {
 	m := &Model{
-		Data:       data,
-		Tx:         s.Tx,
-		WhereList:  bson.M{},
-		OpList:     sync.Map{},
-		Collection: "",
+		Data:               data,
+		Tx:                 s.Tx,
+		WhereList:          bson.M{},
+		OpList:             sync.Map{},
+		Ctx:                s.GetContext(),
+		Collection:         "",
+		transactionSession: s.session,
 	}
 	m.Collection = m.GetCollection(data)
 	return m
 }
 
 func (m *SessionModel) Commit() error {
-	m.userControlTranslator = true
+	// Commit/Rollback are terminal for this callback. WithTransaction detects
+	// the final state and must not issue a second commit or abort.
 	return m.session.CommitTransaction(m.GetContext())
 }
 
 func (m *SessionModel) Rollback() error {
-	m.userControlTranslator = true
 	return m.session.AbortTransaction(m.GetContext())
 }
 
@@ -521,6 +565,6 @@ func (m *Model) BulkWrite(datas any, order bool) error {
 
 	// 执行批量写入操作
 	bulkWriteOpts := options.BulkWrite().SetOrdered(order) // 设置为无序时 提高性能
-	_, err := m.Tx.Client.Database(m.Tx.Database).Collection(m.GetCollection(m.Data)).BulkWrite(context.TODO(), models, bulkWriteOpts)
+	_, err := m.Tx.Client.Database(m.Tx.Database).Collection(m.GetCollection(m.Data)).BulkWrite(m.GetContext(), models, bulkWriteOpts)
 	return err
 }

@@ -27,6 +27,9 @@ type Model struct {
 	WhereList  bson.M
 	Ctx        context.Context //上下文
 	Collection string
+	// transactionSession keeps SetContext from detaching operations from the
+	// active transaction when callers add a deadline or context value.
+	transactionSession mongo.Session
 }
 
 func (m *DBConn) Model(data any) types.ORMModel {
@@ -53,6 +56,12 @@ func (m *Model) GetContext() context.Context {
 }
 
 func (m *Model) SetContext(ctx context.Context) types.ORMModel {
+	if m.transactionSession != nil {
+		if ctx == nil {
+			ctx = context.Background()
+		}
+		ctx = mongo.NewSessionContext(ctx, m.transactionSession)
+	}
 	m.Ctx = ctx
 	return m
 }

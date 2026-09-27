@@ -41,7 +41,7 @@ func (q *Query) All(data any) error {
 		log.Errorf("Mongo查出错: %v\n", err)
 		return err
 	}
-	err = result.All(context.Background(), data)
+	err = result.All(q.m.GetContext(), data)
 	if err != nil {
 		log.Errorf("mongdob查询数据ALL Decode失败: %v\n", err)
 	}
