@@ -93,8 +93,11 @@ func initWithConfig(ctx context.Context, config *conf.MongoDBConfig, verify bool
 
 	opts.SetMaxPoolSize(uint64(poolSize))
 	opts.SetMinPoolSize(uint64(poolSize / 10))
-	// 设置30s 超时
-	opts.SetTimeout(30 * time.Second)
+	// Bound topology discovery and individual socket establishment without
+	// imposing a default deadline on every database command. Client.Timeout
+	// also caps long-running operations such as CreateIndexes, so callers that
+	// need an operation deadline must provide it through context instead.
+	applyClientNetworkTimeouts(opts)
 	// 只读取主节点
 	opts.SetReadPreference(readpref.Primary())
 	// 连接mongodb
@@ -165,6 +168,15 @@ func initWithConfig(ctx context.Context, config *conf.MongoDBConfig, verify bool
 	}
 
 	return conn, nil
+}
+
+func applyClientNetworkTimeouts(opts *options.ClientOptions) {
+	if opts.ConnectTimeout == nil {
+		opts.SetConnectTimeout(30 * time.Second)
+	}
+	if opts.ServerSelectionTimeout == nil {
+		opts.SetServerSelectionTimeout(30 * time.Second)
+	}
 }
 
 // Driver errors can include the connection string, including credentials.

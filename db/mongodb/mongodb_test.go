@@ -8,7 +8,29 @@ import (
 	"time"
 
 	"github.com/lfhy/morm/conf"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
+
+func TestClientTimeoutsDoNotCapDatabaseOperations(t *testing.T) {
+	opts := options.Client()
+	applyClientNetworkTimeouts(opts)
+	if opts.Timeout != nil {
+		t.Fatalf("database operation timeout unexpectedly configured: %v", *opts.Timeout)
+	}
+	if opts.ConnectTimeout == nil || *opts.ConnectTimeout != 30*time.Second {
+		t.Fatalf("connect timeout = %v", opts.ConnectTimeout)
+	}
+	if opts.ServerSelectionTimeout == nil || *opts.ServerSelectionTimeout != 30*time.Second {
+		t.Fatalf("server selection timeout = %v", opts.ServerSelectionTimeout)
+	}
+	explicit := options.Client().ApplyURI("mongodb://localhost/?connectTimeoutMS=17&serverSelectionTimeoutMS=23")
+	applyClientNetworkTimeouts(explicit)
+	if explicit.ConnectTimeout == nil || *explicit.ConnectTimeout != 17*time.Millisecond ||
+		explicit.ServerSelectionTimeout == nil || *explicit.ServerSelectionTimeout != 23*time.Millisecond {
+		t.Fatalf("explicit URI timeouts were overridden: connect=%v selection=%v",
+			explicit.ConnectTimeout, explicit.ServerSelectionTimeout)
+	}
+}
 
 func TestInitWithConfigRejectsCanceledContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
